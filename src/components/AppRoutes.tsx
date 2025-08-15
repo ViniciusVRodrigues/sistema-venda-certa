@@ -1,0 +1,211 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Layout } from './layout';
+import { LoadingSpinner } from './ui';
+
+// Auth Pages
+import { LoginPage } from '../pages/auth/LoginPage';
+import { RegisterPage } from '../pages/auth/RegisterPage';
+
+// Customer Pages
+import { HomePage } from '../pages/customer/HomePage';
+
+// Admin Pages
+import { AdminDashboard } from '../pages/admin/AdminDashboard';
+
+// Protected Route Component
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: 'admin' | 'customer';
+  redirectTo?: string;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiredRole,
+  redirectTo = '/auth/login'
+}) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to={redirectTo} replace />;
+  }
+  
+  if (requiredRole && user?.role !== requiredRole) {
+    const fallbackRoute = user?.role === 'admin' ? '/admin' : '/';
+    return <Navigate to={fallbackRoute} replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+export const AppRoutes: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+  
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route
+        path="/auth/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to={user?.role === 'admin' ? '/admin' : '/'} replace />
+          ) : (
+            <LoginPage />
+          )
+        }
+      />
+      <Route
+        path="/auth/register"
+        element={
+          isAuthenticated ? (
+            <Navigate to={user?.role === 'admin' ? '/admin' : '/'} replace />
+          ) : (
+            <RegisterPage />
+          )
+        }
+      />
+      
+      {/* Customer Routes */}
+      <Route
+        path="/"
+        element={
+          <Layout>
+            <HomePage />
+          </Layout>
+        }
+      />
+      
+      <Route
+        path="/product/:id"
+        element={
+          <Layout>
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <p className="text-gray-500">Página do produto em desenvolvimento</p>
+            </div>
+          </Layout>
+        }
+      />
+      
+      <Route
+        path="/cart"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Carrinho de compras em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/checkout"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Checkout em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/orders"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Meus pedidos em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Admin Routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout showFooter={false}>
+              <AdminDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/admin/products"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout showFooter={false}>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Gestão de produtos em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/admin/orders"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout showFooter={false}>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Gestão de pedidos em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/admin/customers"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout showFooter={false}>
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-gray-500">Gestão de clientes em desenvolvimento</p>
+              </div>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* 404 Route */}
+      <Route
+        path="*"
+        element={
+          <Layout>
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+                <p className="text-gray-600 mb-8">Página não encontrada</p>
+                <a
+                  href="/"
+                  className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Voltar ao início
+                </a>
+              </div>
+            </div>
+          </Layout>
+        }
+      />
+    </Routes>
+  );
+};
