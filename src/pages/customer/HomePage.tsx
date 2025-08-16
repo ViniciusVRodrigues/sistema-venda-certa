@@ -144,22 +144,22 @@ export const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-primary-600 text-white">
+      <div className="bg-green-600 bg-gradient-to-r from-green-600 via-green-500 to-green-400 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">
+            <h1 className="text-4xl font-bold mb-4 text-white drop-shadow-md">
               Produtos Frescos Direto do Produtor
             </h1>
-            <p className="text-xl text-primary-100 max-w-2xl mx-auto">
+            <p className="text-xl text-green-100 max-w-2xl mx-auto drop-shadow-sm">
               Descubra a qualidade e frescor dos nossos produtos orgânicos e naturais
             </p>
           </div>
         </div>
       </div>
-      
+
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+        <div className="bg-green-50 p-6 rounded-lg shadow-sm border border-green-200 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               placeholder="Buscar produtos..."
@@ -167,7 +167,7 @@ export const HomePage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <select
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -180,48 +180,48 @@ export const HomePage: React.FC = () => {
             </select>
           </div>
         </div>
-        
+
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <Card key={product.id} padding="none" className="overflow-hidden hover:shadow-md transition-shadow">
-              <div className="aspect-w-16 aspect-h-12">
+            <Card key={product.id} padding="none" className="overflow-hidden hover:shadow-lg transition-shadow border border-green-100">
+              <div className="aspect-w-16 aspect-h-12 bg-green-50">
                 <img
                   src={product.images[0]}
                   alt={product.name}
                   className="w-full h-48 object-cover"
                 />
               </div>
-              
+
               <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-green-900">
                     {product.name}
                   </h3>
                   {getStatusBadge(product.status)}
                 </div>
-                
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+
+                <p className="text-green-700 text-sm mb-3 line-clamp-2">
                   {product.description}
                 </p>
-                
+
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-lg font-bold text-primary-600">
+                  <div className="text-lg font-bold text-green-700">
                     R$ {product.price.toFixed(2)}
-                    <span className="text-sm text-gray-500 font-normal">
+                    <span className="text-sm text-green-500 font-normal">
                       /{product.unit}
                     </span>
                   </div>
                   {product.stock > 0 && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-green-500">
                       {product.stock} disponível
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <Link to={`/product/${product.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full" size="sm">
+                    <Button variant="outline" className="w-full border-green-500 text-green-700 hover:bg-green-100 hover:text-green-900" size="sm">
                       Ver detalhes
                     </Button>
                   </Link>
@@ -230,7 +230,7 @@ export const HomePage: React.FC = () => {
                     size="sm"
                     onClick={() => handleAddToCart(product)}
                     disabled={product.status !== 'active' || product.stock === 0}
-                    className="flex-1"
+                    className="flex-1 bg-green-600 hover:bg-green-700 border-green-700"
                   >
                     Adicionar
                   </Button>
@@ -239,10 +239,10 @@ export const HomePage: React.FC = () => {
             </Card>
           ))}
         </div>
-        
+
         {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
+            <p className="text-green-500 text-lg">
               Nenhum produto encontrado com os filtros selecionados.
             </p>
           </div>
