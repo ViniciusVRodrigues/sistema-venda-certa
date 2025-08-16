@@ -1,4 +1,4 @@
-import { Order, OrderItem, Address, DeliveryMethod, PaymentMethod, CartItem } from '../../types';
+import type { Order, OrderItem, Address, DeliveryMethod, PaymentMethod, CartItem } from '../../types';
 
 export interface CheckoutStep {
   id: number;
@@ -113,7 +113,7 @@ export const checkoutService = {
 
   // Calculate delivery fee and time
   async calculateDelivery(
-    items: CartItem[], 
+    _items: CartItem[], 
     address: Address, 
     methodId: string
   ): Promise<DeliveryCalculation | null> {

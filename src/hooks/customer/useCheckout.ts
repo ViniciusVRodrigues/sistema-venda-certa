@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  checkoutService, 
+  checkoutService
+} from '../../services/customer/checkoutService';
+import type { 
   CheckoutStep, 
   OrderSummary, 
   CreateOrderData, 
   OrderConfirmation,
   DeliveryCalculation
 } from '../../services/customer/checkoutService';
-import { DeliveryMethod, PaymentMethod, Address, CartItem } from '../../types';
+import type { DeliveryMethod, PaymentMethod, Address, CartItem } from '../../types';
 
 export const useCheckout = (items: CartItem[]) => {
   const [steps, setSteps] = useState<CheckoutStep[]>([]);

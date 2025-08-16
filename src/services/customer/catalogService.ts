@@ -1,4 +1,4 @@
-import { Product, Category, PaginationData, SortOption, FilterOptions } from '../../types';
+import type { Product, Category, PaginationData } from '../../types';
 
 // Mock data for development
 const mockProducts: Product[] = [

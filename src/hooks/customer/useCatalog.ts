@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { catalogService, CatalogFilters, CatalogSort, CatalogResponse } from '../../services/customer/catalogService';
-import { Product, Category } from '../../types';
+import { catalogService } from '../../services/customer/catalogService';
+import type { CatalogFilters, CatalogSort, CatalogResponse } from '../../services/customer/catalogService';
+import type { Product, Category } from '../../types';
 
 export const useCatalog = (
   initialFilters: CatalogFilters = {},

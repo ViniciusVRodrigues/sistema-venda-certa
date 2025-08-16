@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  productDetailsService, 
+  productDetailsService
+} from '../../services/customer/productDetailsService';
+import type { 
   ProductDetailsResponse, 
   CreateReviewData 
 } from '../../services/customer/productDetailsService';
-import { Review } from '../../types';
+import type { Review } from '../../types';
 
 export const useProductDetails = (productId: string | null) => {
   const [data, setData] = useState<ProductDetailsResponse | null>(null);

@@ -1,4 +1,4 @@
-import { Product, Review, Customer } from '../../types';
+import type { Product, Review, Customer } from '../../types';
 
 // Mock reviews data
 const mockReviews: Review[] = [
@@ -132,9 +132,10 @@ export const productDetailsService = {
       ? productReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews 
       : 0;
     
-    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const ratingDistribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     productReviews.forEach(review => {
-      ratingDistribution[review.rating]++;
+      const rating = review.rating as keyof typeof ratingDistribution;
+      ratingDistribution[rating]++;
     });
 
     // Get related products (same category, excluding current product)
