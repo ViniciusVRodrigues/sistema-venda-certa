@@ -13,6 +13,11 @@ export interface Customer extends User {
   role: 'customer';
   addresses: Address[];
   orders: Order[];
+  isVip: boolean;
+  isBlocked: boolean;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate?: Date;
 }
 
 export interface Admin extends User {
@@ -36,13 +41,16 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  category: string;
+  shortDescription?: string;
+  category: Category;
   price: number;
   unit: string;
   variations?: ProductVariation[];
   stock: number;
   status: 'active' | 'inactive' | 'out_of_stock';
   images: string[];
+  tags: string[];
+  sku?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +60,13 @@ export interface ProductVariation {
   name: string;
   price: number;
   stock: number;
+  sku?: string;
+  weight?: number;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
 }
 
 export interface CartItem {
@@ -78,6 +93,9 @@ export interface Order {
   updatedAt: Date;
   estimatedDelivery?: Date;
   deliveredAt?: Date;
+  notes?: string;
+  cancelReason?: string;
+  timeline: OrderTimelineEvent[];
 }
 
 export interface OrderItem {
@@ -94,8 +112,29 @@ export interface DeliveryMethod {
   id: string;
   name: string;
   description: string;
+  type: 'pickup' | 'delivery' | 'fixed_shipping';
   price: number;
   estimatedDays: number;
+  isActive: boolean;
+  regions?: DeliveryRegion[];
+  schedule?: DeliverySchedule[];
+}
+
+export interface DeliveryRegion {
+  id: string;
+  name: string;
+  zipCodeStart: string;
+  zipCodeEnd: string;
+  neighborhoods: string[];
+  fee: number;
+  estimatedDays: number;
+}
+
+export interface DeliverySchedule {
+  id: string;
+  dayOfWeek: number; // 0-6, 0 = Sunday
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
   isActive: boolean;
 }
 
@@ -104,6 +143,14 @@ export interface PaymentMethod {
   name: string;
   type: 'credit_card' | 'debit_card' | 'pix' | 'bank_transfer' | 'cash';
   isActive: boolean;
+  config?: PaymentMethodConfig;
+}
+
+export interface PaymentMethodConfig {
+  pixKey?: string;
+  instructions?: string;
+  acceptOnDelivery?: boolean;
+  confirmationDeadlineHours?: number;
 }
 
 export interface Notification {
@@ -130,4 +177,91 @@ export interface Category {
   name: string;
   description?: string;
   isActive: boolean;
+}
+
+// New admin-specific types
+export interface OrderTimelineEvent {
+  id: string;
+  status: Order['status'];
+  timestamp: Date;
+  description: string;
+  userId?: string;
+  userName?: string;
+}
+
+export interface NotificationRecord {
+  id: string;
+  type: 'order_created' | 'status_updated' | 'payment_confirmed' | 'order_delivered';
+  orderId?: string;
+  customerId: string;
+  customerName: string;
+  title: string;
+  message: string;
+  sentAt: Date;
+  deliveryStatus: 'pending' | 'sent' | 'failed';
+  retryCount: number;
+}
+
+export interface ReportMetrics {
+  totalRevenue: number;
+  totalOrders: number;
+  averageTicket: number;
+  activeCustomers: number;
+  period: 'today' | '7days' | '30days' | 'custom';
+  previousPeriodComparison?: {
+    revenue: number;
+    orders: number;
+    averageTicket: number;
+    customers: number;
+  };
+}
+
+export interface SalesData {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface TopProduct {
+  productId: string;
+  productName: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface PaymentMethodStats {
+  method: string;
+  count: number;
+  percentage: number;
+}
+
+export interface LowStockProduct {
+  id: string;
+  name: string;
+  currentStock: number;
+  minimumStock: number;
+  category: string;
+}
+
+// Utility types for admin forms and tables
+export interface FilterOptions {
+  search?: string;
+  category?: string;
+  status?: string;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface PaginationData {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface SortOption {
+  field: string;
+  direction: 'asc' | 'desc';
 }

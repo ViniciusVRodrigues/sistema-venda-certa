@@ -13,6 +13,9 @@ import { HomePage } from '../pages/customer/HomePage';
 
 // Admin Pages
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
+import { ProductsList } from '../components/admin/products/ProductsList';
+import { OrdersList } from '../components/admin/orders/OrdersList';
+import { CustomersList } from '../components/admin/customers/CustomersList';
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -152,9 +155,7 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="admin">
             <Layout showFooter={false}>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Gestão de produtos em desenvolvimento</p>
-              </div>
+              <ProductsList />
             </Layout>
           </ProtectedRoute>
         }
@@ -165,9 +166,7 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="admin">
             <Layout showFooter={false}>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Gestão de pedidos em desenvolvimento</p>
-              </div>
+              <OrdersList />
             </Layout>
           </ProtectedRoute>
         }
@@ -178,9 +177,7 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="admin">
             <Layout showFooter={false}>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Gestão de clientes em desenvolvimento</p>
-              </div>
+              <CustomersList />
             </Layout>
           </ProtectedRoute>
         }

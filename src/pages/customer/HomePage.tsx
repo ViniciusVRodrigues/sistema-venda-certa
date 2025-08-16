@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import type { Product } from '../../types';
+import type { Product, Category } from '../../types';
 import { Card, Button, Badge, Input } from '../../components/ui';
 import { useCart } from '../../context/CartContext';
+
+// Mock categories
+const mockCategories: Category[] = [
+  { id: '1', name: 'Verduras', description: 'Vegetais frescos', isActive: true },
+  { id: '2', name: 'Frutas', description: 'Frutas frescas', isActive: true },
+];
 
 // Mock data for demonstration
 const mockProducts: Product[] = [
@@ -10,12 +16,13 @@ const mockProducts: Product[] = [
     id: '1',
     name: 'Tomate Orgânico',
     description: 'Tomates frescos cultivados sem agrotóxicos',
-    category: 'Verduras',
+    category: mockCategories[0],
     price: 8.50,
     unit: 'kg',
     stock: 50,
     status: 'active',
     images: ['https://via.placeholder.com/300x200?text=Tomate'],
+    tags: ['orgânico', 'tomate'],
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -23,12 +30,13 @@ const mockProducts: Product[] = [
     id: '2',
     name: 'Alface Crespa',
     description: 'Alface fresca e crocante',
-    category: 'Verduras',
+    category: mockCategories[0],
     price: 3.00,
     unit: 'unidade',
     stock: 30,
     status: 'active',
     images: ['https://via.placeholder.com/300x200?text=Alface'],
+    tags: ['alface', 'verdura'],
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -36,12 +44,13 @@ const mockProducts: Product[] = [
     id: '3',
     name: 'Banana Prata',
     description: 'Bananas doces e maduras',
-    category: 'Frutas',
+    category: mockCategories[1],
     price: 5.90,
     unit: 'kg',
     stock: 25,
     status: 'active',
     images: ['https://via.placeholder.com/300x200?text=Banana'],
+    tags: ['banana', 'fruta'],
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -49,12 +58,13 @@ const mockProducts: Product[] = [
     id: '4',
     name: 'Cenoura',
     description: 'Cenouras frescas e nutritivas',
-    category: 'Verduras',
+    category: mockCategories[0],
     price: 4.50,
     unit: 'kg',
     stock: 0,
     status: 'out_of_stock',
     images: ['https://via.placeholder.com/300x200?text=Cenoura'],
+    tags: ['cenoura', 'verdura'],
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -93,13 +103,15 @@ export const HomePage: React.FC = () => {
     }
     
     if (selectedCategory) {
-      filtered = filtered.filter(product => product.category === selectedCategory);
+      filtered = filtered.filter(product => product.category.id === selectedCategory);
     }
     
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory]);
   
-  const categories = Array.from(new Set(products.map(p => p.category)));
+  const categories = Array.from(
+    new Map(products.map(p => [p.category.id, p.category])).values()
+  );
   
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -161,8 +173,8 @@ export const HomePage: React.FC = () => {
             >
               <option value="">Todas as categorias</option>
               {categories.map(category => (
-                <option key={category} value={category}>
-                  {category}
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
