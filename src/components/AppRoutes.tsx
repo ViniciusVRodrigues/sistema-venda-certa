@@ -10,6 +10,8 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 
 // Customer Pages
 import { HomePage } from '../pages/customer/HomePage';
+import { ProductDetailPage } from '../pages/customer/ProductDetailPage';
+import { CartPage } from '../pages/customer/CartPage';
 
 // Admin Pages
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -92,9 +94,7 @@ export const AppRoutes: React.FC = () => {
         path="/product/:id"
         element={
           <Layout>
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <p className="text-gray-500">Página do produto em desenvolvimento</p>
-            </div>
+            <ProductDetailPage />
           </Layout>
         }
       />
@@ -104,9 +104,7 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="customer">
             <Layout>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Carrinho de compras em desenvolvimento</p>
-              </div>
+              <CartPage />
             </Layout>
           </ProtectedRoute>
         }
