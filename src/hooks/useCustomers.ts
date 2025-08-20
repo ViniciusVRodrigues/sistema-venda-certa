@@ -26,6 +26,9 @@ interface UseCustomersResult {
   // Customer operations
   updateVipStatus: (customerId: string, isVip: boolean) => Promise<Customer>;
   updateBlockedStatus: (customerId: string, isBlocked: boolean) => Promise<Customer>;
+  createCustomer: (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>) => Promise<Customer>;
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<Customer>;
+  deleteCustomer: (id: string) => Promise<void>;
   
   // Utilities
   refetch: () => Promise<void>;
@@ -107,6 +110,50 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
+  const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>) => {
+    try {
+      setLoading(true);
+      const newCustomer = await customersService.createCustomer(customerData);
+      await fetchCustomers(); // Refresh the list
+      return newCustomer;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchCustomers]);
+
+  const updateCustomer = useCallback(async (id: string, customerData: Partial<Customer>) => {
+    try {
+      setLoading(true);
+      const updatedCustomer = await customersService.updateCustomer(id, customerData);
+      await fetchCustomers(); // Refresh the list
+      return updatedCustomer;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar cliente';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchCustomers]);
+
+  const deleteCustomer = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      await customersService.deleteCustomer(id);
+      await fetchCustomers(); // Refresh the list
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir cliente';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchCustomers]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -131,6 +178,9 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     setPage,
     updateVipStatus,
     updateBlockedStatus,
+    createCustomer,
+    updateCustomer,
+    deleteCustomer,
     refetch: fetchCustomers,
     clearError
   };

@@ -398,5 +398,53 @@ export const customersService = {
         address.zipCode.includes(query)
       )
     );
+  },
+
+  // Create new customer
+  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>): Promise<Customer> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const newCustomer: Customer = {
+      ...customerData,
+      id: Date.now().toString(),
+      orders: [],
+      totalOrders: 0,
+      totalSpent: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    mockCustomers.push(newCustomer);
+    return newCustomer;
+  },
+
+  // Update existing customer
+  async updateCustomer(id: string, customerData: Partial<Customer>): Promise<Customer> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const customerIndex = mockCustomers.findIndex(customer => customer.id === id);
+    if (customerIndex === -1) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    mockCustomers[customerIndex] = {
+      ...mockCustomers[customerIndex],
+      ...customerData,
+      updatedAt: new Date()
+    };
+
+    return mockCustomers[customerIndex];
+  },
+
+  // Delete customer
+  async deleteCustomer(id: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const customerIndex = mockCustomers.findIndex(customer => customer.id === id);
+    if (customerIndex === -1) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    mockCustomers.splice(customerIndex, 1);
   }
 };
