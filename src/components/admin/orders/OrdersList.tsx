@@ -3,6 +3,7 @@ import { useOrders } from '../../../hooks/useOrders';
 import { DataTable, type Column } from '../shared/DataTable';
 import { Drawer } from '../shared/Drawer';
 import { Timeline } from '../shared/Timeline';
+import { DeleteConfirmationModal } from '../shared/modals';
 import { Button, Card, Badge, Select, Modal } from '../../ui';
 import type { Order } from '../../../types';
 
@@ -14,6 +15,10 @@ export const OrdersList: React.FC = () => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<Order['status']>('received');
   const [statusNotes, setStatusNotes] = useState('');
+  
+  // Delete modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
 
   const {
     orders,
@@ -27,6 +32,7 @@ export const OrdersList: React.FC = () => {
     setPage,
     updateOrderStatus,
     updatePaymentStatus,
+    deleteOrder,
     generateReceipt
   } = useOrders();
 
@@ -97,6 +103,24 @@ export const OrdersList: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao gerar comprovante:', error);
+    }
+  };
+
+  // Delete handlers
+  const handleDeleteOrder = (order: Order) => {
+    setDeletingOrder(order);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      if (deletingOrder) {
+        await deleteOrder(deletingOrder.id);
+        setDeletingOrder(null);
+      }
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error);
     }
   };
 
@@ -211,13 +235,14 @@ export const OrdersList: React.FC = () => {
     {
       key: 'actions',
       title: 'Ações',
-      width: '32',
+      width: '40',
       render: (_, record: Order) => (
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => openOrderDetails(record)}
+            title="Ver detalhes"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -228,9 +253,21 @@ export const OrdersList: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleGenerateReceipt(record.id)}
+            title="Gerar comprovante"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteOrder(record)}
+            title="Excluir pedido"
+            className="text-red-600 hover:text-red-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </Button>
         </div>
@@ -479,6 +516,23 @@ export const OrdersList: React.FC = () => {
             </div>
           )}
         </Drawer>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setDeletingOrder(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          loading={loading}
+          itemCount={1}
+          title="Excluir pedido"
+          message={deletingOrder 
+            ? `Tem certeza que deseja excluir o pedido #${deletingOrder.id}? Esta ação não pode ser desfeita.`
+            : undefined
+          }
+        />
 
         {/* Status Update Modal */}
         <Modal

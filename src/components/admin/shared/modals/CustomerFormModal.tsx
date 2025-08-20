@@ -14,6 +14,7 @@ export interface CustomerFormData {
   name: string;
   email: string;
   phone: string;
+  role: 'customer';
   isVip: boolean;
   isBlocked: boolean;
   addresses: Address[];
@@ -30,6 +31,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     name: '',
     email: '',
     phone: '',
+    role: 'customer',
     isVip: false,
     isBlocked: false,
     addresses: []
@@ -55,6 +57,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         name: customer.name,
         email: customer.email,
         phone: customer.phone || '',
+        role: customer.role,
         isVip: customer.isVip,
         isBlocked: customer.isBlocked,
         addresses: customer.addresses
@@ -80,6 +83,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         name: '',
         email: '',
         phone: '',
+        role: 'customer',
         isVip: false,
         isBlocked: false,
         addresses: []
