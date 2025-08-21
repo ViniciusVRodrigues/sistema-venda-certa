@@ -530,5 +530,17 @@ export const ordersService = {
         <p><strong>Total:</strong> ${order.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
       </div>
     `;
+  },
+
+  // Delete order
+  async deleteOrder(id: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const orderIndex = mockOrders.findIndex(order => order.id === id);
+    if (orderIndex === -1) {
+      throw new Error('Pedido não encontrado');
+    }
+
+    mockOrders.splice(orderIndex, 1);
   }
 };

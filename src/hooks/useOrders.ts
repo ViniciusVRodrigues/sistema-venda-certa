@@ -27,6 +27,7 @@ interface UseOrdersResult {
   updateOrderStatus: (orderId: string, status: Order['status'], notes?: string) => Promise<Order>;
   updatePaymentStatus: (orderId: string, paymentStatus: Order['paymentStatus']) => Promise<Order>;
   cancelOrder: (orderId: string, reason: string) => Promise<Order>;
+  deleteOrder: (orderId: string) => Promise<void>;
   addOrderNote: (orderId: string, note: string) => Promise<Order>;
   resendNotification: (orderId: string, type: 'status_update' | 'payment_reminder') => Promise<void>;
   generateReceipt: (orderId: string) => Promise<string>;
@@ -126,6 +127,20 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
     }
   }, [fetchOrders]);
 
+  const deleteOrder = useCallback(async (orderId: string) => {
+    try {
+      setLoading(true);
+      await ordersService.deleteOrder(orderId);
+      await fetchOrders(); // Refresh the list
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir pedido';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchOrders]);
+
   const addOrderNote = useCallback(async (orderId: string, note: string) => {
     try {
       const updatedOrder = await ordersService.addOrderNote(orderId, note);
@@ -183,6 +198,7 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
     updateOrderStatus,
     updatePaymentStatus,
     cancelOrder,
+    deleteOrder,
     addOrderNote,
     resendNotification,
     generateReceipt,
