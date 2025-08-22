@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, LoadingSpinner } from '../ui';
 import { useAuth } from '../../context/AuthContext';
 import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
@@ -175,24 +176,24 @@ export const DeliveryDashboard: React.FC = () => {
           <Card className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Ações Rápidas</h3>
             <div className="space-y-3">
-              <a
-                href="/delivery/orders?status=pending"
+              <Link
+                to="/delivery/orders?status=pending"
                 className="block w-full bg-yellow-50 text-yellow-800 border border-yellow-200 px-4 py-3 rounded-lg hover:bg-yellow-100 transition-colors text-center font-medium"
               >
                 Ver Pedidos Pendentes ({stats?.totalPendingOrders || 0})
-              </a>
-              <a
-                href="/delivery/orders?status=in_route"
+              </Link>
+              <Link
+                to="/delivery/orders?status=in_route"
                 className="block w-full bg-blue-50 text-blue-800 border border-blue-200 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors text-center font-medium"
               >
                 Ver Pedidos em Rota ({stats?.totalInRouteOrders || 0})
-              </a>
-              <a
-                href="/delivery/history"
+              </Link>
+              <Link
+                to="/delivery/history"
                 className="block w-full bg-green-50 text-green-800 border border-green-200 px-4 py-3 rounded-lg hover:bg-green-100 transition-colors text-center font-medium"
               >
                 Ver Histórico de Entregas
-              </a>
+              </Link>
             </div>
           </Card>
 

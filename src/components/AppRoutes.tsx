@@ -189,6 +189,40 @@ export const AppRoutes: React.FC = () => {
         }
       />
       
+      {/* Delivery Routes */}
+      <Route
+        path="/delivery"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryDashboardPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/delivery/orders"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryOrdersPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/delivery/history"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryHistoryPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
       {/* Admin Routes */}
       <Route
         path="/admin"
@@ -229,40 +263,6 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRole="admin">
             <Layout showFooter={false}>
               <CustomersList />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      {/* Delivery Routes */}
-      <Route
-        path="/delivery"
-        element={
-          <ProtectedRoute requiredRole="delivery">
-            <Layout showFooter={false}>
-              <DeliveryDashboardPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      <Route
-        path="/delivery/orders"
-        element={
-          <ProtectedRoute requiredRole="delivery">
-            <Layout showFooter={false}>
-              <DeliveryOrdersPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      <Route
-        path="/delivery/history"
-        element={
-          <ProtectedRoute requiredRole="delivery">
-            <Layout showFooter={false}>
-              <DeliveryHistoryPage />
             </Layout>
           </ProtectedRoute>
         }
