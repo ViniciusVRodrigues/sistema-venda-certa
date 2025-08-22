@@ -12,6 +12,11 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { HomePage } from '../pages/customer/HomePage';
 import { ProductDetailPage } from '../pages/customer/ProductDetailPage';
 import { CartPage } from '../pages/customer/CartPage';
+import { CheckoutPage } from '../pages/customer/CheckoutPage';
+import { CustomerMenuPage } from '../pages/customer/CustomerMenuPage';
+import { CustomerAddressesPage } from '../pages/customer/CustomerAddressesPage';
+import { CustomerOrdersPage } from '../pages/customer/CustomerOrdersPage';
+import { CustomerProfilePage } from '../pages/customer/CustomerProfilePage';
 
 // Admin Pages
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
@@ -115,9 +120,51 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="customer">
             <Layout>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Checkout em desenvolvimento</p>
-              </div>
+              <CheckoutPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/customer/menu"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <CustomerMenuPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/customer/addresses"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <CustomerAddressesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/customer/orders"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <CustomerOrdersPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/customer/profile"
+        element={
+          <ProtectedRoute requiredRole="customer">
+            <Layout>
+              <CustomerProfilePage />
             </Layout>
           </ProtectedRoute>
         }
@@ -128,9 +175,7 @@ export const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRole="customer">
             <Layout>
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <p className="text-gray-500">Meus pedidos em desenvolvimento</p>
-              </div>
+              <CustomerOrdersPage />
             </Layout>
           </ProtectedRoute>
         }

@@ -45,7 +45,7 @@ export const useCheckout = (items: CartItem[]) => {
         ]);
         setDeliveryMethods(deliveryData);
         setPaymentMethods(paymentData);
-      } catch (err) {
+      } catch {
         setError('Erro ao carregar métodos de entrega e pagamento');
       } finally {
         setLoading(false);
