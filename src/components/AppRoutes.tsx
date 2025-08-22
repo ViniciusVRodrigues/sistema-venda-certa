@@ -24,10 +24,15 @@ import { ProductsList } from '../components/admin/products/ProductsList';
 import { OrdersList } from '../components/admin/orders/OrdersList';
 import { CustomersList } from '../components/admin/customers/CustomersList';
 
+// Delivery Pages
+import { DeliveryDashboardPage } from '../pages/delivery/DeliveryDashboardPage';
+import { DeliveryOrdersPage } from '../pages/delivery/DeliveryOrdersPage';
+import { DeliveryHistoryPage } from '../pages/delivery/DeliveryHistoryPage';
+
 // Protected Route Component
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'customer';
+  requiredRole?: 'admin' | 'customer' | 'delivery';
   redirectTo?: string;
 }
 
@@ -51,7 +56,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   if (requiredRole && user?.role !== requiredRole) {
-    const fallbackRoute = user?.role === 'admin' ? '/admin' : '/';
+    const fallbackRoute = user?.role === 'admin' ? '/admin' : 
+                          user?.role === 'delivery' ? '/delivery' : '/';
     return <Navigate to={fallbackRoute} replace />;
   }
   
@@ -68,7 +74,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/login"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.role === 'admin' ? '/admin' : '/'} replace />
+            <Navigate to={user?.role === 'admin' ? '/admin' : 
+                          user?.role === 'delivery' ? '/delivery' : '/'} replace />
           ) : (
             <LoginPage />
           )
@@ -78,7 +85,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/register"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.role === 'admin' ? '/admin' : '/'} replace />
+            <Navigate to={user?.role === 'admin' ? '/admin' : 
+                          user?.role === 'delivery' ? '/delivery' : '/'} replace />
           ) : (
             <RegisterPage />
           )
@@ -221,6 +229,40 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requiredRole="admin">
             <Layout showFooter={false}>
               <CustomersList />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Delivery Routes */}
+      <Route
+        path="/delivery"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryDashboardPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/delivery/orders"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryOrdersPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/delivery/history"
+        element={
+          <ProtectedRoute requiredRole="delivery">
+            <Layout showFooter={false}>
+              <DeliveryHistoryPage />
             </Layout>
           </ProtectedRoute>
         }

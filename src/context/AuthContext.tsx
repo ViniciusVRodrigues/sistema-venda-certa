@@ -61,9 +61,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Mock user data based on email
       const mockUser: User = {
         id: '1',
-        name: email.includes('admin') ? 'Admin User' : 'Customer User',
+        name: email.includes('admin') ? 'Admin User' : 
+              email.includes('delivery') ? 'Delivery Driver' : 'Customer User',
         email,
-        role: email.includes('admin') ? 'admin' : 'customer',
+        role: email.includes('admin') ? 'admin' : 
+              email.includes('delivery') ? 'delivery' : 'customer',
         createdAt: new Date(),
         updatedAt: new Date(),
       };

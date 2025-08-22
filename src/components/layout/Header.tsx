@@ -10,6 +10,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   
   const isAdminArea = location.pathname.startsWith('/admin');
+  const isDeliveryArea = location.pathname.startsWith('/delivery');
   
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -17,7 +18,7 @@ export const Header: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to={isAdminArea ? '/admin' : '/'} className="flex items-center">
+            <Link to={isAdminArea ? '/admin' : isDeliveryArea ? '/delivery' : '/'} className="flex items-center">
               <div className="flex-shrink-0">
                 <h1 className="text-2xl font-bold text-primary-600">
                   Venda Certa
@@ -28,7 +29,7 @@ export const Header: React.FC = () => {
           
           {/* Navigation */}
           <nav className="hidden md:flex space-x-8">
-            {!isAdminArea && (
+            {!isAdminArea && !isDeliveryArea && (
               <>
                 <Link
                   to="/"
@@ -79,11 +80,34 @@ export const Header: React.FC = () => {
                 </Link>
               </>
             )}
+
+            {isDeliveryArea && (
+              <>
+                <Link
+                  to="/delivery"
+                  className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/delivery/orders"
+                  className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Meus Pedidos
+                </Link>
+                <Link
+                  to="/delivery/history"
+                  className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Histórico
+                </Link>
+              </>
+            )}
           </nav>
           
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            {!isAdminArea && isAuthenticated && (
+            {!isAdminArea && !isDeliveryArea && isAuthenticated && (
               <>
                 <Link
                   to="/cart"
@@ -124,7 +148,14 @@ export const Header: React.FC = () => {
                     </Button>
                   </Link>
                 )}
-                {user?.role === 'customer' && isAdminArea && (
+                {user?.role === 'delivery' && !isDeliveryArea && (
+                  <Link to="/delivery">
+                    <Button variant="outline" size="sm">
+                      Entregas
+                    </Button>
+                  </Link>
+                )}
+                {user?.role === 'customer' && (isAdminArea || isDeliveryArea) && (
                   <Link to="/">
                     <Button variant="outline" size="sm">
                       Loja
