@@ -101,7 +101,7 @@ export const CustomerAddressesPage: React.FC = () => {
       }
       
       handleCloseModal();
-    } catch (err) {
+    } catch {
       // Error is handled by the hook
     } finally {
       setSubmitting(false);
@@ -112,7 +112,7 @@ export const CustomerAddressesPage: React.FC = () => {
     if (window.confirm('Tem certeza que deseja excluir este endereço?')) {
       try {
         await deleteAddress(address.id);
-      } catch (err) {
+      } catch {
         // Error is handled by the hook
       }
     }
@@ -121,7 +121,7 @@ export const CustomerAddressesPage: React.FC = () => {
   const handleSetDefault = async (address: Address) => {
     try {
       await setDefaultAddress(address.id);
-    } catch (err) {
+    } catch {
       // Error is handled by the hook
     }
   };

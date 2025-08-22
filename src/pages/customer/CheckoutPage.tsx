@@ -82,7 +82,7 @@ export const CheckoutPage: React.FC = () => {
         zipCode: '',
         isDefault: false
       });
-    } catch (err) {
+    } catch {
       // Error handling is done by the hook
     }
   };
@@ -112,7 +112,7 @@ export const CheckoutPage: React.FC = () => {
           }
         });
       }
-    } catch (err) {
+    } catch {
       // Error handling is done by the hook
     } finally {
       setSubmittingOrder(false);

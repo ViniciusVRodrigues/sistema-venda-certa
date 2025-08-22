@@ -80,7 +80,7 @@ export const CustomerProfilePage: React.FC = () => {
       await updateProfile(profileForm);
       setIsEditingProfile(false);
       setProfileErrors([]);
-    } catch (err) {
+    } catch {
       // Error is handled by the hook
     } finally {
       setSubmitting(false);
@@ -107,7 +107,7 @@ export const CustomerProfilePage: React.FC = () => {
       });
       setPasswordErrors([]);
       alert('Senha alterada com sucesso!');
-    } catch (err) {
+    } catch {
       // Error is handled by the hook
     } finally {
       setSubmitting(false);
