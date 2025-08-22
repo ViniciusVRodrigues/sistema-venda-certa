@@ -120,8 +120,8 @@ export const AdminDashboard: React.FC = () => {
               Ações Rápidas
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-4 text-left bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors">
-                <div className="text-primary-600 font-medium">Adicionar Produto</div>
+              <button className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                <div className="text-green-600 font-medium">Adicionar Produto</div>
                 <div className="text-sm text-gray-600">Cadastrar novo produto no catálogo</div>
               </button>
               <button className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg transition-colors">

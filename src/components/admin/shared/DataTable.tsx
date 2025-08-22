@@ -255,7 +255,7 @@ export const DataTable = <T extends Record<string, any>>({
                       if (input) input.indeterminate = isIndeterminate;
                     }}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                   />
                 </th>
               )}
@@ -312,7 +312,7 @@ export const DataTable = <T extends Record<string, any>>({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(recordKey, e.target.checked)}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                         />
                       </td>
                     )}

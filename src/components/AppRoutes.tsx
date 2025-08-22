@@ -192,7 +192,7 @@ export const AppRoutes: React.FC = () => {
                 <p className="text-gray-600 mb-8">Página não encontrada</p>
                 <a
                   href="/"
-                  className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Voltar ao início
                 </a>

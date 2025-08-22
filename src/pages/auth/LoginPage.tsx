@@ -38,7 +38,7 @@ export const LoginPage: React.FC = () => {
             Ou{' '}
             <Link
               to="/auth/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
+              className="font-medium text-green-600 hover:text-green-500"
             >
               criar uma nova conta
             </Link>
@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Lembrar de mim
@@ -89,7 +89,7 @@ export const LoginPage: React.FC = () => {
               <div className="text-sm">
                 <Link
                   to="/auth/forgot-password"
-                  className="font-medium text-primary-600 hover:text-primary-500"
+                  className="font-medium text-green-600 hover:text-green-500"
                 >
                   Esqueceu a senha?
                 </Link>
