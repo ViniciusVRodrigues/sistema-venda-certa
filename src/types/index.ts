@@ -2,7 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'customer';
+  role: 'admin' | 'customer' | 'delivery';
   phone?: string;
   avatar?: string;
   createdAt: Date;
@@ -23,6 +23,15 @@ export interface Customer extends User {
 export interface Admin extends User {
   role: 'admin';
   permissions: string[];
+}
+
+export interface Delivery extends User {
+  role: 'delivery';
+  isActive: boolean;
+  vehicle?: string;
+  assignedOrders: string[];
+  completedDeliveries: number;
+  rating?: number;
 }
 
 export interface Address {
@@ -96,6 +105,8 @@ export interface Order {
   notes?: string;
   cancelReason?: string;
   timeline: OrderTimelineEvent[];
+  deliveryDriverId?: string;
+  deliveryDriver?: Delivery;
 }
 
 export interface OrderItem {
