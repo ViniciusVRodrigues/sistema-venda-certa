@@ -1,5 +1,9 @@
 import { Router } from 'express';
 import clienteRoutes from './clienteRoutes';
+import authRoutes from './authRoutes';
+import productRoutes from './productRoutes';
+import categoryRoutes from './categoryRoutes';
+import orderRoutes from './orderRoutes';
 
 const router = Router();
 
@@ -13,8 +17,12 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Aplicar rotas de clientes
-router.use(clienteRoutes);
+// Aplicar rotas
+router.use('/auth', authRoutes);
+router.use('/clientes', clienteRoutes);
+router.use('/produtos', productRoutes);
+router.use('/categorias', categoryRoutes);
+router.use('/pedidos', orderRoutes);
 
 // Rota 404 para rotas não encontradas
 router.use('*', (req, res) => {

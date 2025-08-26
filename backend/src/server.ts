@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { sequelize } from './models';
 import routes from './routes';
+import { generalLimiter, authLimiter, orderLimiter, searchLimiter } from './middleware/rateLimiter';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -13,6 +14,9 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares de segurança
 app.use(helmet());
+
+// Rate limiting geral
+app.use(generalLimiter);
 
 // CORS
 app.use(cors({
@@ -31,6 +35,12 @@ if (process.env.NODE_ENV === 'development') {
     next();
   });
 }
+
+// Rate limiting específico para endpoints
+app.use('/api/auth/login', authLimiter);
+app.use('/api/pedidos', orderLimiter);
+app.use('/api/produtos', searchLimiter);
+app.use('/api/categorias', searchLimiter);
 
 // Rotas da API
 app.use('/api', routes);
@@ -65,6 +75,10 @@ async function startServer() {
       console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
       console.log(`👥 Clientes API: http://localhost:${PORT}/api/clientes`);
+      console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`);
+      console.log(`📦 Produtos API: http://localhost:${PORT}/api/produtos`);
+      console.log(`🏷️  Categorias API: http://localhost:${PORT}/api/categorias`);
+      console.log(`🛒 Pedidos API: http://localhost:${PORT}/api/pedidos`);
     });
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error);

@@ -89,33 +89,89 @@ npm start
 ### Health Check
 - `GET /api/health` - Verificar status da API
 
-### Clientes
+### 🔐 Autenticação
+- `POST /api/auth/login` - Fazer login
+- `POST /api/auth/logout` - Fazer logout
+- `GET /api/auth/me` - Obter perfil do usuário logado
+
+### 👥 Clientes
 - `GET /api/clientes` - Listar clientes (com paginação e busca)
 - `GET /api/clientes/:id` - Buscar cliente por ID
 - `POST /api/clientes` - Criar novo cliente
 - `PUT /api/clientes/:id` - Atualizar cliente
 - `DELETE /api/clientes/:id` - Excluir cliente
 
+### 📦 Produtos
+- `GET /api/produtos` - Listar produtos (com filtros)
+- `GET /api/produtos/:id` - Buscar produto por ID
+- `GET /api/produtos/categorias` - Listar categorias de produtos
+- `GET /api/produtos/marcas` - Listar marcas de produtos
+- `POST /api/produtos` - Criar novo produto (🔒 protegido)
+- `PUT /api/produtos/:id` - Atualizar produto (🔒 protegido)
+- `DELETE /api/produtos/:id` - Excluir produto (🔒 protegido)
+
+### 🏷️ Categorias
+- `GET /api/categorias` - Listar categorias
+- `GET /api/categorias/tree` - Obter árvore de categorias
+- `GET /api/categorias/:id` - Buscar categoria por ID
+- `GET /api/categorias/slug/:slug` - Buscar categoria por slug
+- `POST /api/categorias` - Criar nova categoria (🔒 protegido)
+- `PUT /api/categorias/:id` - Atualizar categoria (🔒 protegido)
+- `DELETE /api/categorias/:id` - Excluir categoria (🔒 protegido)
+
+### 🛒 Pedidos
+- `GET /api/pedidos` - Listar pedidos (🔒 protegido)
+- `GET /api/pedidos/:id` - Buscar pedido por ID (🔒 protegido)
+- `GET /api/pedidos/stats` - Estatísticas de pedidos (🔒 protegido)
+- `POST /api/pedidos` - Criar novo pedido (🔒 protegido)
+- `PUT /api/pedidos/:id` - Atualizar pedido (🔒 protegido)
+- `DELETE /api/pedidos/:id` - Excluir pedido (🔒 protegido)
+
 ### Exemplo de uso
 
-#### Criar cliente:
+#### Fazer login:
 ```bash
-curl -X POST http://localhost:3001/api/clientes \
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "nome": "João Silva",
     "email": "joao@email.com",
-    "senha": "123456",
-    "telefone": "(11) 99999-9999"
+    "senha": "123456"
   }'
 ```
 
-#### Listar clientes:
+#### Criar produto (com autenticação):
 ```bash
-curl http://localhost:3001/api/clientes?page=1&limit=10&search=João
+curl -X POST http://localhost:3001/api/produtos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token_jwt" \
+  -d '{
+    "nome": "iPhone 15",
+    "preco": 4999.99,
+    "categoria": "Smartphones",
+    "marca": "Apple",
+    "estoque": 50
+  }'
 ```
 
-## 🗃️ Modelo de Dados
+#### Criar pedido:
+```bash
+curl -X POST http://localhost:3001/api/pedidos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer seu_token_jwt" \
+  -d '{
+    "clienteId": 1,
+    "metodoPagamento": "pix",
+    "itens": [
+      {
+        "produtoId": 1,
+        "quantidade": 2,
+        "observacoes": "Entrega rápida"
+      }
+    ]
+  }'
+```
+
+## 🗃️ Modelos de Dados
 
 ### Cliente
 ```typescript
@@ -136,6 +192,114 @@ curl http://localhost:3001/api/clientes?page=1&limit=10&search=João
 }
 ```
 
+### Produto
+```typescript
+{
+  id: number;           // Primary key
+  nome: string;         // Nome do produto (obrigatório)
+  descricao?: string;   // Descrição do produto
+  preco: number;        // Preço (obrigatório)
+  precoPromocional?: number; // Preço promocional
+  categoria?: string;   // Categoria do produto
+  marca?: string;       // Marca do produto
+  sku?: string;         // Código SKU único
+  codigoBarras?: string; // Código de barras
+  estoque: number;      // Quantidade em estoque (obrigatório)
+  estoqueMinimo?: number; // Estoque mínimo
+  imagemPrincipal?: string; // URL da imagem principal
+  imagens?: string;     // JSON array de URLs de imagens
+  peso?: number;        // Peso em kg
+  dimensoes?: string;   // Dimensões (LxWxH em cm)
+  ativo: boolean;       // Produto ativo (padrão: true)
+  destaque: boolean;    // Produto em destaque (padrão: false)
+  avaliacaoMedia?: number; // Avaliação média (0-5)
+  totalAvaliacoes?: number; // Total de avaliações
+  totalVendas?: number; // Total de vendas
+  tags?: string;        // Tags para busca
+  createdAt: Date;      // Data de criação
+  updatedAt: Date;      // Data de atualização
+}
+```
+
+### Categoria
+```typescript
+{
+  id: number;           // Primary key
+  nome: string;         // Nome da categoria (obrigatório)
+  descricao?: string;   // Descrição da categoria
+  slug: string;         // Slug único para URLs (obrigatório)
+  imagem?: string;      // URL da imagem da categoria
+  icone?: string;       // Ícone da categoria
+  cor?: string;         // Cor em hexadecimal (#RRGGBB)
+  parentId?: number;    // ID da categoria pai (para subcategorias)
+  ordem?: number;       // Ordem de exibição
+  ativo: boolean;       // Categoria ativa (padrão: true)
+  destaque: boolean;    // Categoria em destaque (padrão: false)
+  totalProdutos?: number; // Total de produtos na categoria
+  createdAt: Date;      // Data de criação
+  updatedAt: Date;      // Data de atualização
+}
+```
+
+### Pedido
+```typescript
+{
+  id: number;           // Primary key
+  clienteId: number;    // ID do cliente (obrigatório)
+  numeroComanda: string; // Número único do pedido
+  status: OrderStatus;  // Status do pedido (pendente, confirmado, etc.)
+  metodoPagamento: PaymentMethod; // Método de pagamento
+  subtotal: number;     // Subtotal dos itens
+  desconto?: number;    // Valor do desconto
+  taxaEntrega?: number; // Taxa de entrega
+  total: number;        // Valor total do pedido
+  observacoes?: string; // Observações do pedido
+  enderecoEntrega?: string; // Endereço de entrega
+  telefoneContato?: string; // Telefone para contato
+  dataEntrega?: Date;   // Data de entrega
+  dataConfirmacao?: Date; // Data de confirmação
+  dataCancelamento?: Date; // Data de cancelamento
+  motivoCancelamento?: string; // Motivo do cancelamento
+  createdAt: Date;      // Data de criação
+  updatedAt: Date;      // Data de atualização
+}
+
+// Status possíveis do pedido
+enum OrderStatus {
+  PENDENTE = 'pendente',
+  CONFIRMADO = 'confirmado',
+  PREPARANDO = 'preparando',
+  ENVIADO = 'enviado',
+  ENTREGUE = 'entregue',
+  CANCELADO = 'cancelado'
+}
+
+// Métodos de pagamento
+enum PaymentMethod {
+  DINHEIRO = 'dinheiro',
+  CARTAO_CREDITO = 'cartao_credito',
+  CARTAO_DEBITO = 'cartao_debito',
+  PIX = 'pix',
+  BOLETO = 'boleto'
+}
+```
+
+### Item do Pedido
+```typescript
+{
+  id: number;           // Primary key
+  pedidoId: number;     // ID do pedido (obrigatório)
+  produtoId: number;    // ID do produto (obrigatório)
+  nomeProduto: string;  // Nome do produto no momento da compra
+  precoProduto: number; // Preço do produto no momento da compra
+  quantidade: number;   // Quantidade do item (obrigatório)
+  subtotal: number;     // Subtotal do item (preço × quantidade)
+  observacoes?: string; // Observações específicas do item
+  createdAt: Date;      // Data de criação
+  updatedAt: Date;      // Data de atualização
+}
+```
+
 ## 🧪 Scripts Disponíveis
 
 - `npm run dev` - Inicia servidor de desenvolvimento
@@ -148,39 +312,86 @@ curl http://localhost:3001/api/clientes?page=1&limit=10&search=João
 
 ## 🔧 Próximos Passos
 
-Esta é a estrutura inicial da API. Para completar o sistema, você pode:
+Esta implementação agora inclui um sistema completo de e-commerce. Funcionalidades adicionais que podem ser implementadas:
 
-1. **Implementar autenticação JWT**
-   - Middleware de autenticação
-   - Rotas de login/logout
-   - Proteção de rotas
+1. **Sistema de arquivo (uploads)**
+   - Upload de imagens para produtos
+   - Upload de avatares para clientes
+   - Armazenamento em cloud (AWS S3, Cloudinary)
 
-2. **Adicionar novos modelos**
-   - Produto
-   - Pedido
-   - Categoria
-   - Endereço
+2. **Funcionalidades avançadas**
+   - Sistema de avaliações e comentários
+   - Carrinho de compras persistente
+   - Wishlist/Lista de desejos
+   - Cupons de desconto
+   - Sistema de notificações
 
-3. **Implementar relacionamentos**
-   - Cliente → Pedidos
-   - Pedido → Itens
-   - Produto → Categoria
+3. **Relatórios e analytics**
+   - Dashboard administrativo
+   - Relatórios de vendas
+   - Métricas de produtos
+   - Análise de comportamento
 
-4. **Adicionar funcionalidades**
-   - Upload de imagens
-   - Notificações
-   - Relatórios
-   - Logs de auditoria
+4. **Integração com pagamentos**
+   - Gateway de pagamento (Stripe, PayPal, PagSeguro)
+   - PIX automático
+   - Boleto bancário
 
-5. **Testes automatizados**
-   - Testes unitários
-   - Testes de integração
-   - Testes E2E
+5. **Deploy e infraestrutura**
+   - Dockerização completa
+   - CI/CD com GitHub Actions
+   - Deploy em cloud (AWS, Heroku, Railway)
+   - Monitoramento e logs
 
-6. **Deploy**
-   - Dockerfile
-   - Docker Compose
-   - CI/CD
+## ✅ Funcionalidades Implementadas
+
+### 🔐 Autenticação JWT
+- ✅ Login com email e senha
+- ✅ Proteção de rotas sensíveis
+- ✅ Middleware de autenticação
+- ✅ Verificação de usuário bloqueado
+
+### 📦 Gestão de Produtos
+- ✅ CRUD completo de produtos
+- ✅ Busca e filtros avançados
+- ✅ Controle de estoque
+- ✅ Categorização e marcas
+- ✅ Produtos em destaque
+- ✅ Preços promocionais
+
+### 🏷️ Sistema de Categorias
+- ✅ Categorias hierárquicas (pai/filho)
+- ✅ Slug para URLs amigáveis
+- ✅ Ordenação personalizada
+- ✅ Categorias em destaque
+- ✅ Cores e ícones
+
+### 🛒 Sistema de Pedidos
+- ✅ Criação de pedidos completos
+- ✅ Controle de status (pendente → entregue)
+- ✅ Múltiplos métodos de pagamento
+- ✅ Cálculo automático de totais
+- ✅ Histórico de pedidos
+- ✅ Estatísticas de vendas
+
+### 👥 Gestão de Clientes
+- ✅ Cadastro com validações
+- ✅ Perfil VIP e bloqueio
+- ✅ Histórico de compras
+- ✅ Estatísticas do cliente
+
+### 🛡️ Segurança
+- ✅ Rate limiting por endpoint
+- ✅ Headers de segurança (Helmet)
+- ✅ Validação de entrada (Joi)
+- ✅ Hash de senhas (bcrypt)
+- ✅ CORS configurado
+
+### 🧪 Testes
+- ✅ Testes de integração completos
+- ✅ Cobertura de todos os endpoints
+- ✅ Validação de autenticação
+- ✅ Testes de erro
 
 ## 📝 Validações
 
