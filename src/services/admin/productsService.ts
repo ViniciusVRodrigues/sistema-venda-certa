@@ -1,90 +1,104 @@
 import type { Product, Category, FilterOptions, PaginationData, SortOption } from '../../types';
+import { apiService, type ApiError } from '../api';
 
-// Mock data for categories
-const mockCategories: Category[] = [
-  { id: '1', name: 'Eletrônicos', description: 'Produtos eletrônicos e acessórios', isActive: true },
-  { id: '2', name: 'Roupas', description: 'Vestuário e acessórios', isActive: true },
-  { id: '3', name: 'Casa & Jardim', description: 'Itens para casa e jardim', isActive: true },
-  { id: '4', name: 'Esportes', description: 'Equipamentos esportivos', isActive: true },
-  { id: '5', name: 'Livros', description: 'Livros e materiais educativos', isActive: true },
-];
+// Backend API interfaces
+interface BackendProduct {
+  id: number;
+  nome: string;
+  descricao: string;
+  descricaoBreve?: string;
+  preco: number;
+  unidade: string;
+  estoque: number;
+  status: 'ativo' | 'inativo' | 'fora_estoque';
+  imagens: string[];
+  tags: string[];
+  sku?: string;
+  marca?: string;
+  peso?: number;
+  dimensoes?: string;
+  avaliacaoMedia?: number;
+  totalVendas?: number;
+  categoriaId?: number;
+  categoria?: BackendCategory;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Mock data for products
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Smartphone Samsung Galaxy',
-    description: 'Smartphone com tela de 6.1" e câmera de 64MP',
-    shortDescription: 'Smartphone Samsung com excelente qualidade',
-    category: mockCategories[0],
-    price: 1299.99,
-    unit: 'un',
-    stock: 15,
-    status: 'active',
-    images: ['/images/smartphone1.jpg', '/images/smartphone2.jpg'],
-    tags: ['smartphone', 'samsung', 'android'],
-    sku: 'SAMS-GAL-001',
-    variations: [
-      { id: '1-1', name: '128GB - Preto', price: 1299.99, stock: 10, sku: 'SAMS-GAL-001-128-BK' },
-      { id: '1-2', name: '256GB - Branco', price: 1499.99, stock: 5, sku: 'SAMS-GAL-001-256-WH' }
-    ],
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20'),
-  },
-  {
-    id: '2',
-    name: 'Camiseta Básica',
-    description: 'Camiseta de algodão 100% com corte moderno',
-    shortDescription: 'Camiseta básica de algodão',
-    category: mockCategories[1],
-    price: 49.99,
-    unit: 'un',
-    stock: 50,
-    status: 'active',
-    images: ['/images/tshirt1.jpg'],
-    tags: ['camiseta', 'algodão', 'básica'],
-    sku: 'CAM-BAS-001',
-    variations: [
-      { id: '2-1', name: 'P - Azul', price: 49.99, stock: 15 },
-      { id: '2-2', name: 'M - Azul', price: 49.99, stock: 20 },
-      { id: '2-3', name: 'G - Azul', price: 49.99, stock: 15 },
-    ],
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-15'),
-  },
-  {
-    id: '3',
-    name: 'Headset Gamer',
-    description: 'Headset com microfone e som surround 7.1',
-    shortDescription: 'Headset para jogos com qualidade premium',
-    category: mockCategories[0],
-    price: 299.99,
-    unit: 'un',
-    stock: 8,
-    status: 'active',
-    images: ['/images/headset1.jpg'],
-    tags: ['headset', 'gamer', 'áudio'],
-    sku: 'HEAD-GAM-001',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-12'),
-  },
-  {
-    id: '4',
-    name: 'Mesa de Escritório',
-    description: 'Mesa de escritório em MDF com gavetas',
-    shortDescription: 'Mesa funcional para escritório',
-    category: mockCategories[2],
-    price: 399.99,
-    unit: 'un',
-    stock: 3,
-    status: 'active',
-    images: ['/images/desk1.jpg'],
-    tags: ['mesa', 'escritório', 'móveis'],
-    sku: 'MES-ESC-001',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-10'),
-  }
-];
+interface BackendCategory {
+  id: number;
+  nome: string;
+  descricao?: string;
+  slug: string;
+  cor?: string;
+  icone?: string;
+  ativo: boolean;
+  parentId?: number;
+  parent?: BackendCategory;
+  children?: BackendCategory[];
+  totalProdutos?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BackendProductsResponse {
+  produtos: BackendProduct[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+}
+
+// Conversion functions
+function convertBackendCategory(backendCategory: BackendCategory): Category {
+  return {
+    id: backendCategory.id.toString(),
+    name: backendCategory.nome,
+    description: backendCategory.descricao,
+    isActive: backendCategory.ativo,
+  };
+}
+
+function convertBackendProduct(backendProduct: BackendProduct): Product {
+  return {
+    id: backendProduct.id.toString(),
+    name: backendProduct.nome,
+    description: backendProduct.descricao,
+    shortDescription: backendProduct.descricaoBreve,
+    category: backendProduct.categoria ? convertBackendCategory(backendProduct.categoria) : {
+      id: backendProduct.categoriaId?.toString() || '0',
+      name: 'Sem categoria',
+      isActive: true,
+    },
+    price: backendProduct.preco,
+    unit: backendProduct.unidade,
+    stock: backendProduct.estoque,
+    status: backendProduct.status === 'ativo' ? 'active' : 
+           backendProduct.status === 'inativo' ? 'inactive' : 'out_of_stock',
+    images: backendProduct.imagens,
+    tags: backendProduct.tags,
+    sku: backendProduct.sku,
+    createdAt: new Date(backendProduct.createdAt),
+    updatedAt: new Date(backendProduct.updatedAt),
+  };
+}
+
+function convertProductToBackend(product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Partial<BackendProduct> {
+  return {
+    nome: product.name,
+    descricao: product.description,
+    descricaoBreve: product.shortDescription,
+    preco: product.price,
+    unidade: product.unit,
+    estoque: product.stock,
+    status: product.status === 'active' ? 'ativo' : 
+           product.status === 'inactive' ? 'inativo' : 'fora_estoque',
+    imagens: product.images,
+    tags: product.tags,
+    sku: product.sku,
+    categoriaId: parseInt(product.category.id),
+  };
+}
 
 interface ProductsResponse {
   products: Product[];
@@ -98,161 +112,176 @@ export const productsService = {
     pagination: { page: number; pageSize: number } = { page: 1, pageSize: 10 },
     sort: SortOption = { field: 'updatedAt', direction: 'desc' }
   ): Promise<ProductsResponse> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    let filteredProducts = [...mockProducts];
-
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredProducts = filteredProducts.filter(product =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.sku?.toLowerCase().includes(searchLower) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // Apply category filter
-    if (filters.category) {
-      filteredProducts = filteredProducts.filter(product =>
-        product.category.id === filters.category
-      );
-    }
-
-    // Apply status filter
-    if (filters.status) {
-      filteredProducts = filteredProducts.filter(product =>
-        product.status === filters.status
-      );
-    }
-
-    // Apply sorting
-    filteredProducts.sort((a, b) => {
-      const aValue = a[sort.field as keyof Product] as any;
-      const bValue = b[sort.field as keyof Product] as any;
+    try {
+      const params = new URLSearchParams();
       
-      if (sort.direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
+      // Add pagination
+      params.append('page', pagination.page.toString());
+      params.append('pageSize', pagination.pageSize.toString());
+      
+      // Add sorting
+      params.append('sortBy', sort.field);
+      params.append('sortOrder', sort.direction);
+      
+      // Add filters
+      if (filters.search) {
+        params.append('search', filters.search);
       }
-    });
-
-    // Apply pagination
-    const startIndex = (pagination.page - 1) * pagination.pageSize;
-    const endIndex = startIndex + pagination.pageSize;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
-    return {
-      products: paginatedProducts,
-      pagination: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        total: filteredProducts.length,
-        totalPages: Math.ceil(filteredProducts.length / pagination.pageSize)
+      if (filters.category) {
+        params.append('categoria', filters.category);
       }
-    };
+      if (filters.status) {
+        const backendStatus = filters.status === 'active' ? 'ativo' : 
+                            filters.status === 'inactive' ? 'inativo' : 'fora_estoque';
+        params.append('status', backendStatus);
+      }
+
+      const response = await apiService.get<BackendProductsResponse>(`/produtos?${params.toString()}`);
+      
+      return {
+        products: response.produtos.map(convertBackendProduct),
+        pagination: {
+          page: response.page,
+          pageSize: response.pageSize,
+          total: response.total,
+          totalPages: response.totalPages,
+        },
+      };
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar produtos');
+    }
   },
 
   // Get single product by ID
   async getProduct(id: string): Promise<Product | null> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return mockProducts.find(product => product.id === id) || null;
+    try {
+      const response = await apiService.get<BackendProduct>(`/produtos/${id}`);
+      return convertBackendProduct(response);
+    } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.status === 404) {
+        return null;
+      }
+      throw new Error(apiError.message || 'Erro ao buscar produto');
+    }
   },
 
   // Create new product
   async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const newProduct: Product = {
-      ...productData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    mockProducts.push(newProduct);
-    return newProduct;
+    try {
+      const backendData = convertProductToBackend(productData);
+      const response = await apiService.post<BackendProduct>('/produtos', backendData);
+      return convertBackendProduct(response);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao criar produto');
+    }
   },
 
   // Update existing product
   async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const productIndex = mockProducts.findIndex(product => product.id === id);
-    if (productIndex === -1) {
-      throw new Error('Produto não encontrado');
+    try {
+      const backendData: Partial<BackendProduct> = {};
+      
+      if (productData.name) backendData.nome = productData.name;
+      if (productData.description) backendData.descricao = productData.description;
+      if (productData.shortDescription) backendData.descricaoBreve = productData.shortDescription;
+      if (productData.price !== undefined) backendData.preco = productData.price;
+      if (productData.unit) backendData.unidade = productData.unit;
+      if (productData.stock !== undefined) backendData.estoque = productData.stock;
+      if (productData.status) {
+        backendData.status = productData.status === 'active' ? 'ativo' : 
+                            productData.status === 'inactive' ? 'inativo' : 'fora_estoque';
+      }
+      if (productData.images) backendData.imagens = productData.images;
+      if (productData.tags) backendData.tags = productData.tags;
+      if (productData.sku) backendData.sku = productData.sku;
+      if (productData.category) backendData.categoriaId = parseInt(productData.category.id);
+
+      const response = await apiService.put<BackendProduct>(`/produtos/${id}`, backendData);
+      return convertBackendProduct(response);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao atualizar produto');
     }
-
-    mockProducts[productIndex] = {
-      ...mockProducts[productIndex],
-      ...productData,
-      updatedAt: new Date()
-    };
-
-    return mockProducts[productIndex];
   },
 
   // Delete product
   async deleteProduct(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const productIndex = mockProducts.findIndex(product => product.id === id);
-    if (productIndex === -1) {
-      throw new Error('Produto não encontrado');
+    try {
+      await apiService.delete(`/produtos/${id}`);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao deletar produto');
     }
-
-    mockProducts.splice(productIndex, 1);
   },
 
   // Bulk actions
   async bulkUpdateStatus(productIds: string[], status: Product['status']): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    productIds.forEach(id => {
-      const productIndex = mockProducts.findIndex(product => product.id === id);
-      if (productIndex !== -1) {
-        mockProducts[productIndex].status = status;
-        mockProducts[productIndex].updatedAt = new Date();
-      }
-    });
+    try {
+      const backendStatus = status === 'active' ? 'ativo' : 
+                          status === 'inactive' ? 'inativo' : 'fora_estoque';
+      
+      await apiService.patch('/produtos/bulk/status', {
+        ids: productIds.map(id => parseInt(id)),
+        status: backendStatus,
+      });
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao atualizar status dos produtos');
+    }
   },
 
   async bulkDelete(productIds: string[]): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    productIds.forEach(id => {
-      const productIndex = mockProducts.findIndex(product => product.id === id);
-      if (productIndex !== -1) {
-        mockProducts.splice(productIndex, 1);
-      }
-    });
+    try {
+      await apiService.post('/produtos/bulk/delete', {
+        ids: productIds.map(id => parseInt(id)),
+      });
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao deletar produtos');
+    }
   },
 
   // Get categories
   async getCategories(): Promise<Category[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return mockCategories.filter(category => category.isActive);
+    try {
+      const response = await apiService.get<BackendCategory[]>('/categorias');
+      return response
+        .filter(category => category.ativo)
+        .map(convertBackendCategory);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar categorias');
+    }
   },
 
   // Create category
   async createCategory(categoryData: Omit<Category, 'id'>): Promise<Category> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const newCategory: Category = {
-      ...categoryData,
-      id: Date.now().toString()
-    };
-
-    mockCategories.push(newCategory);
-    return newCategory;
+    try {
+      const backendData = {
+        nome: categoryData.name,
+        descricao: categoryData.description,
+        ativo: categoryData.isActive,
+      };
+      
+      const response = await apiService.post<BackendCategory>('/categorias', backendData);
+      return convertBackendCategory(response);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao criar categoria');
+    }
   },
 
   // Get low stock products
   async getLowStockProducts(threshold: number = 10): Promise<Product[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return mockProducts.filter(product => product.stock <= threshold);
-  }
+    try {
+      const response = await apiService.get<BackendProduct[]>(`/produtos/low-stock?threshold=${threshold}`);
+      return response.map(convertBackendProduct);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar produtos com estoque baixo');
+    }
+  },
 };

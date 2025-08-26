@@ -40,13 +40,14 @@ export const RegisterPage: React.FC = () => {
     
     try {
       await register({
-        name: formData.name,
+        nome: formData.name,
         email: formData.email,
-        phone: formData.phone,
+        senha: formData.password,
+        telefone: formData.phone,
       });
       navigate('/');
-    } catch {
-      setError('Erro ao criar conta. Tente novamente.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

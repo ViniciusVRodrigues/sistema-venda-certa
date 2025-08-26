@@ -1,95 +1,96 @@
 import type { Product, Category, PaginationData } from '../../types';
+import { apiService, type ApiError } from '../api';
 
-// Mock data for development
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Tomate Orgânico',
-    description: 'Tomates frescos cultivados sem agrotóxicos, ideais para saladas e cozinha.',
-    shortDescription: 'Tomates orgânicos frescos',
-    category: { id: '1', name: 'Vegetais', description: 'Vegetais frescos', isActive: true },
-    price: 8.50,
-    unit: 'kg',
-    stock: 25,
-    status: 'active' as const,
-    images: [
-      'https://images.unsplash.com/photo-1546470427-e26264be0b37?w=400',
-      'https://images.unsplash.com/photo-1589927986089-35812388d922?w=400'
-    ],
-    tags: ['orgânico', 'fresco', 'vegetal'],
-    sku: 'VEG001',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20'),
-    variations: [
-      { id: '1-1', name: '500g', price: 4.25, stock: 30, sku: 'VEG001-500' },
-      { id: '1-2', name: '1kg', price: 8.50, stock: 25, sku: 'VEG001-1KG' }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Alface Crespa',
-    description: 'Alface crespa fresca, perfeita para saladas nutritivas.',
-    shortDescription: 'Alface crespa orgânica',
-    category: { id: '1', name: 'Vegetais', description: 'Vegetais frescos', isActive: true },
-    price: 3.50,
-    unit: 'pé',
-    stock: 40,
-    status: 'active' as const,
-    images: ['https://images.unsplash.com/photo-1556801711-7d5c8b933fa5?w=400'],
-    tags: ['orgânico', 'folhas', 'salada'],
-    sku: 'VEG002',
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-18')
-  },
-  {
-    id: '3',
-    name: 'Banana Prata',
-    description: 'Bananas doces e nutritivas, fonte de potássio e energia.',
-    shortDescription: 'Bananas frescas doces',
-    category: { id: '2', name: 'Frutas', description: 'Frutas frescas', isActive: true },
-    price: 5.90,
-    unit: 'kg',
-    stock: 15,
-    status: 'active' as const,
-    images: ['https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=400'],
-    tags: ['fruta', 'doce', 'potássio'],
-    sku: 'FRT001',
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-19')
-  },
-  {
-    id: '4',
-    name: 'Cenoura Orgânica',
-    description: 'Cenouras doces e crocantes, ricas em betacaroteno.',
-    shortDescription: 'Cenouras orgânicas doces',
-    category: { id: '1', name: 'Vegetais', description: 'Vegetais frescos', isActive: true },
-    price: 4.80,
-    unit: 'kg',
-    stock: 0,
-    status: 'out_of_stock' as const,
-    images: ['https://images.unsplash.com/photo-1445282768818-728615cc910a?w=400'],
-    tags: ['orgânico', 'raiz', 'betacaroteno'],
-    sku: 'VEG003',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-21')
-  },
-  {
-    id: '5',
-    name: 'Maçã Gala',
-    description: 'Maçãs crocantes e saborosas, ideais para lanches saudáveis.',
-    shortDescription: 'Maçãs frescas crocantes',
-    category: { id: '2', name: 'Frutas', description: 'Frutas frescas', isActive: true },
-    price: 7.20,
-    unit: 'kg',
-    stock: 30,
-    status: 'active' as const,
-    images: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400'],
-    tags: ['fruta', 'crocante', 'lanche'],
-    sku: 'FRT002',
-    createdAt: new Date('2024-01-14'),
-    updatedAt: new Date('2024-01-20')
-  }
-];
+// Backend API interfaces - reusing from admin service
+interface BackendProduct {
+  id: number;
+  nome: string;
+  descricao: string;
+  descricaoBreve?: string;
+  preco: number;
+  unidade: string;
+  estoque: number;
+  status: 'ativo' | 'inativo' | 'fora_estoque';
+  imagens: string[];
+  tags: string[];
+  sku?: string;
+  marca?: string;
+  peso?: number;
+  dimensoes?: string;
+  avaliacaoMedia?: number;
+  totalVendas?: number;
+  categoriaId?: number;
+  categoria?: BackendCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BackendCategory {
+  id: number;
+  nome: string;
+  descricao?: string;
+  slug: string;
+  cor?: string;
+  icone?: string;
+  ativo: boolean;
+  parentId?: number;
+  parent?: BackendCategory;
+  children?: BackendCategory[];
+  totalProdutos?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BackendProductsResponse {
+  produtos: BackendProduct[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+}
+
+// Conversion functions
+function convertBackendCategory(backendCategory: BackendCategory): Category {
+  return {
+    id: backendCategory.id.toString(),
+    name: backendCategory.nome,
+    description: backendCategory.descricao,
+    isActive: backendCategory.ativo,
+  };
+}
+
+function convertBackendProduct(backendProduct: BackendProduct): Product {
+  return {
+    id: backendProduct.id.toString(),
+    name: backendProduct.nome,
+    description: backendProduct.descricao,
+    shortDescription: backendProduct.descricaoBreve,
+    category: backendProduct.categoria ? convertBackendCategory(backendProduct.categoria) : {
+      id: backendProduct.categoriaId?.toString() || '0',
+      name: 'Sem categoria',
+      isActive: true,
+    },
+    price: backendProduct.preco,
+    unit: backendProduct.unidade,
+    stock: backendProduct.estoque,
+    status: backendProduct.status === 'ativo' ? 'active' : 
+           backendProduct.status === 'inativo' ? 'inactive' : 'out_of_stock',
+    images: backendProduct.imagens,
+    tags: backendProduct.tags,
+    sku: backendProduct.sku,
+    createdAt: new Date(backendProduct.createdAt),
+    updatedAt: new Date(backendProduct.updatedAt),
+  };
+}
+
+export interface ProductFilters {
+  search?: string;
+  category?: string;
+  priceMin?: number;
+  priceMax?: number;
+  tags?: string[];
+  inStock?: boolean;
+}
 
 export interface CatalogFilters {
   search?: string;
@@ -110,171 +111,221 @@ export interface CatalogSort {
 export interface CatalogResponse {
   products: Product[];
   pagination: PaginationData;
-  filters: {
-    categories: Category[];
-    priceRange: { min: number; max: number };
-    availableTags: string[];
-  };
+  totalProducts: number;
 }
 
 export const catalogService = {
-  // Get products with filtering, sorting, and pagination
+  // Get products for catalog with filters
   async getProducts(
     filters: CatalogFilters = {},
-    sort: CatalogSort = { field: 'relevance', direction: 'desc' },
-    pagination: { page: number; pageSize: number } = { page: 1, pageSize: 12 }
+    pagination: { page: number; pageSize: number } = { page: 1, pageSize: 12 },
+    sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest' | 'name' = 'relevance'
   ): Promise<CatalogResponse> {
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate API delay
-
-    let filteredProducts = [...mockProducts];
-
-    // Apply filters
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredProducts = filteredProducts.filter(product =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-
-    if (filters.category) {
-      filteredProducts = filteredProducts.filter(product => 
-        product.category.id === filters.category
-      );
-    }
-
-    if (filters.priceRange) {
-      filteredProducts = filteredProducts.filter(product =>
-        product.price >= filters.priceRange!.min &&
-        product.price <= filters.priceRange!.max
-      );
-    }
-
-    if (filters.availability && filters.availability !== 'all') {
-      if (filters.availability === 'in_stock') {
-        filteredProducts = filteredProducts.filter(product => 
-          product.status === 'active' && product.stock > 0
-        );
-      } else if (filters.availability === 'out_of_stock') {
-        filteredProducts = filteredProducts.filter(product => 
-          product.status === 'out_of_stock' || product.stock === 0
-        );
-      }
-    }
-
-    if (filters.tags && filters.tags.length > 0) {
-      filteredProducts = filteredProducts.filter(product =>
-        filters.tags!.some(tag => product.tags.includes(tag))
-      );
-    }
-
-    // Apply sorting
-    filteredProducts.sort((a, b) => {
-      let comparison = 0;
+    try {
+      const params = new URLSearchParams();
       
-      switch (sort.field) {
-        case 'price':
-          comparison = a.price - b.price;
+      // Add pagination
+      params.append('page', pagination.page.toString());
+      params.append('pageSize', pagination.pageSize.toString());
+      
+      // Add sorting
+      switch (sortBy) {
+        case 'price-asc':
+          params.append('sortBy', 'preco');
+          params.append('sortOrder', 'asc');
+          break;
+        case 'price-desc':
+          params.append('sortBy', 'preco');
+          params.append('sortOrder', 'desc');
+          break;
+        case 'newest':
+          params.append('sortBy', 'createdAt');
+          params.append('sortOrder', 'desc');
           break;
         case 'name':
-          comparison = a.name.localeCompare(b.name);
+          params.append('sortBy', 'nome');
+          params.append('sortOrder', 'asc');
           break;
-        case 'created_at':
-          comparison = a.createdAt.getTime() - b.createdAt.getTime();
-          break;
-        case 'relevance':
         default:
-          // For relevance, prioritize in-stock items and match strength
-          const aScore = (a.status === 'active' && a.stock > 0) ? 1 : 0;
-          const bScore = (b.status === 'active' && b.stock > 0) ? 1 : 0;
-          comparison = bScore - aScore;
+          // For relevance, let backend decide
           break;
       }
       
-      return sort.direction === 'asc' ? comparison : -comparison;
-    });
-
-    // Apply pagination
-    const total = filteredProducts.length;
-    const totalPages = Math.ceil(total / pagination.pageSize);
-    const startIndex = (pagination.page - 1) * pagination.pageSize;
-    const endIndex = startIndex + pagination.pageSize;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
-    // Generate filter metadata
-    const categories = Array.from(
-      new Map(mockProducts.map(p => [p.category.id, p.category])).values()
-    );
-    
-    const prices = mockProducts.map(p => p.price);
-    const priceRange = {
-      min: Math.min(...prices),
-      max: Math.max(...prices)
-    };
-    
-    const availableTags = Array.from(
-      new Set(mockProducts.flatMap(p => p.tags))
-    );
-
-    return {
-      products: paginatedProducts,
-      pagination: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        total,
-        totalPages
-      },
-      filters: {
-        categories,
-        priceRange,
-        availableTags
+      // Add filters
+      if (filters.search) {
+        params.append('search', filters.search);
       }
-    };
+      if (filters.category) {
+        params.append('categoria', filters.category);
+      }
+      if (filters.priceRange?.min !== undefined) {
+        params.append('precoMin', filters.priceRange.min.toString());
+      }
+      if (filters.priceRange?.max !== undefined) {
+        params.append('precoMax', filters.priceRange.max.toString());
+      }
+      if (filters.availability === 'in_stock') {
+        params.append('emEstoque', 'true');
+      }
+      
+      // Only show active products for customers
+      params.append('status', 'ativo');
+
+      const response = await apiService.get<BackendProductsResponse>(`/produtos?${params.toString()}`);
+      
+      return {
+        products: response.produtos.map(convertBackendProduct),
+        pagination: {
+          page: response.page,
+          pageSize: response.pageSize,
+          total: response.total,
+          totalPages: response.totalPages,
+        },
+        totalProducts: response.total,
+      };
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar produtos');
+    }
   },
 
-  // Get featured products for homepage
-  async getFeaturedProducts(limit: number = 8): Promise<Product[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    return mockProducts
-      .filter(p => p.status === 'active' && p.stock > 0)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, limit);
+  // Get single product by ID with full details
+  async getProduct(id: string): Promise<Product | null> {
+    try {
+      const response = await apiService.get<BackendProduct>(`/produtos/${id}`);
+      return convertBackendProduct(response);
+    } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.status === 404) {
+        return null;
+      }
+      throw new Error(apiError.message || 'Erro ao buscar produto');
+    }
   },
 
-  // Get categories
+  // Get all categories
   async getCategories(): Promise<Category[]> {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    return Array.from(
-      new Map(mockProducts.map(p => [p.category.id, p.category])).values()
-    ).filter(c => c.isActive);
+    try {
+      const response = await apiService.get<BackendCategory[]>('/categorias');
+      return response
+        .filter(category => category.ativo)
+        .map(convertBackendCategory);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar categorias');
+    }
   },
 
-  // Search suggestions
+  // Get category tree with product counts
+  async getCategoryTree(): Promise<Category[]> {
+    try {
+      const response = await apiService.get<BackendCategory[]>('/categorias/tree');
+      return response
+        .filter(category => category.ativo)
+        .map(convertBackendCategory);
+    } catch (error) {
+      const apiError = error as ApiError;
+      throw new Error(apiError.message || 'Erro ao buscar árvore de categorias');
+    }
+  },
+
+  // Search products
+  async searchProducts(
+    query: string,
+    pagination: { page: number; pageSize: number } = { page: 1, pageSize: 12 }
+  ): Promise<CatalogResponse> {
+    return this.getProducts(
+      { search: query },
+      pagination,
+      'relevance'
+    );
+  },
+
+  // Get featured products
+  async getFeaturedProducts(limit: number = 8): Promise<Product[]> {
+    try {
+      const response = await apiService.get<BackendProduct[]>(`/produtos/featured?limit=${limit}`);
+      return response.map(convertBackendProduct);
+    } catch (error) {
+      // If featured endpoint doesn't exist, get best selling products
+      try {
+        const fallbackResponse = await apiService.get<BackendProductsResponse>(`/produtos?sortBy=totalVendas&sortOrder=desc&pageSize=${limit}`);
+        return fallbackResponse.produtos.map(convertBackendProduct);
+      } catch (fallbackError) {
+        const apiError = fallbackError as ApiError;
+        throw new Error(apiError.message || 'Erro ao buscar produtos em destaque');
+      }
+    }
+  },
+
+  // Get products by category
+  async getProductsByCategory(
+    categoryId: string,
+    pagination: { page: number; pageSize: number } = { page: 1, pageSize: 12 },
+    sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest' | 'name' = 'relevance'
+  ): Promise<CatalogResponse> {
+    return this.getProducts(
+      { category: categoryId },
+      pagination,
+      sortBy
+    );
+  },
+
+  // Get related products
+  async getRelatedProducts(productId: string, limit: number = 4): Promise<Product[]> {
+    try {
+      // First get the product to know its category
+      const product = await this.getProduct(productId);
+      if (!product) {
+        return [];
+      }
+
+      // Get products from the same category, excluding the current product
+      const response = await this.getProductsByCategory(
+        product.category.id,
+        { page: 1, pageSize: limit + 1 }
+      );
+
+      // Filter out the current product and limit results
+      return response.products
+        .filter(p => p.id !== productId)
+        .slice(0, limit);
+    } catch (error) {
+      console.warn('Erro ao buscar produtos relacionados:', error);
+      return [];
+    }
+  },
+
+  // Get price range for a category
+  async getPriceRange(categoryId?: string): Promise<{ min: number; max: number }> {
+    try {
+      const params = new URLSearchParams();
+      if (categoryId) {
+        params.append('categoria', categoryId);
+      }
+      
+      const response = await apiService.get<{ precoMin: number; precoMax: number }>(`/produtos/price-range?${params.toString()}`);
+      return {
+        min: response.precoMin,
+        max: response.precoMax,
+      };
+    } catch (error) {
+      // Return default range if endpoint doesn't exist
+      return { min: 0, max: 1000 };
+    }
+  },
+
+  // Get search suggestions
   async getSearchSuggestions(query: string, limit: number = 5): Promise<string[]> {
     if (!query || query.length < 2) return [];
     
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
-    const queryLower = query.toLowerCase();
-    const suggestions = new Set<string>();
-    
-    mockProducts.forEach(product => {
-      // Add product names that match
-      if (product.name.toLowerCase().includes(queryLower)) {
-        suggestions.add(product.name);
-      }
-      
-      // Add matching tags
-      product.tags.forEach(tag => {
-        if (tag.toLowerCase().includes(queryLower)) {
-          suggestions.add(tag);
-        }
-      });
-    });
-    
-    return Array.from(suggestions).slice(0, limit);
-  }
+    try {
+      const response = await apiService.get<string[]>(`/produtos/search-suggestions?q=${encodeURIComponent(query)}&limit=${limit}`);
+      return response;
+    } catch (error) {
+      // Return empty array if endpoint doesn't exist or fails
+      return [];
+    }
+  },
 };
+

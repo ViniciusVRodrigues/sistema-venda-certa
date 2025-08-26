@@ -18,10 +18,11 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await login(email, password);
-      navigate(email.includes('admin') ? '/admin' : '/');
-    } catch {
-      setError('Email ou senha inválidos');
+      await login({ email, senha: password });
+      // Navigate based on user role - this will be handled by the auth context
+      navigate('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Email ou senha inválidos');
     } finally {
       setIsLoading(false);
     }

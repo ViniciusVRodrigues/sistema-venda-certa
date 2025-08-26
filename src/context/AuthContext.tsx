@@ -1,22 +1,28 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
+import { authService, type LoginCredentials, type RegisterData } from '../services/auth';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
 }
 
 type AuthAction =
   | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'LOGIN_SUCCESS'; payload: User }
-  | { type: 'LOGOUT' };
+  | { type: 'LOGOUT' }
+  | { type: 'UPDATE_USER'; payload: User };
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  register: (userData: Partial<User>) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (userData: RegisterData) => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,12 +31,21 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload, isLoading: false };
     case 'LOGIN_SUCCESS':
       return {
         ...state,
         user: action.payload,
         isAuthenticated: true,
         isLoading: false,
+        error: null,
+      };
+    case 'UPDATE_USER':
+      return {
+        ...state,
+        user: action.payload,
+        error: null,
       };
     case 'LOGOUT':
       return {
@@ -38,6 +53,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: null,
         isAuthenticated: false,
         isLoading: false,
+        error: null,
       };
     default:
       return state;
@@ -49,75 +65,84 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user: null,
     isAuthenticated: false,
     isLoading: false,
+    error: null,
   });
 
-  const login = async (email: string, _password: string) => {
+  const login = async (credentials: LoginCredentials) => {
     dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data based on email
-      const mockUser: User = {
-        id: '1',
-        name: email.includes('admin') ? 'Admin User' : 
-              email.includes('delivery') ? 'Delivery Driver' : 'Customer User',
-        email,
-        role: email.includes('admin') ? 'admin' : 
-              email.includes('delivery') ? 'delivery' : 'customer',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: mockUser });
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch {
-      dispatch({ type: 'SET_LOADING', payload: false });
-      throw new Error('Login failed');
+      const response = await authService.login(credentials);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Erro ao fazer login' });
+      throw error;
     }
   };
 
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('user');
-  };
-
-  const register = async (userData: Partial<User>) => {
+  const logout = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name || '',
-        email: userData.email || '',
-        role: 'customer',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } catch {
-      dispatch({ type: 'SET_LOADING', payload: false });
-      throw new Error('Registration failed');
+      await authService.logout();
+    } catch (error) {
+      console.warn('Erro ao fazer logout:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
     }
   };
 
-  // Check for stored user on mount
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      } catch {
-        localStorage.removeItem('user');
+  const register = async (userData: RegisterData) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      const response = await authService.register(userData);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Erro ao criar conta' });
+      throw error;
+    }
+  };
+
+  const updateProfile = async (data: any) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+    
+    try {
+      const updatedUser = await authService.updateProfile(data);
+      dispatch({ type: 'UPDATE_USER', payload: updatedUser });
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Erro ao atualizar perfil' });
+      throw error;
+    }
+  };
+
+  const clearError = () => {
+    dispatch({ type: 'SET_ERROR', payload: null });
+  };
+
+  // Initialize authentication state from stored data
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && authService.isAuthenticated()) {
+        // Try to refresh profile to validate token
+        try {
+          const refreshedUser = await authService.refreshProfile();
+          if (refreshedUser) {
+            dispatch({ type: 'LOGIN_SUCCESS', payload: refreshedUser });
+          } else {
+            dispatch({ type: 'LOGOUT' });
+          }
+        } catch {
+          dispatch({ type: 'LOGOUT' });
+        }
       }
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   return (
@@ -127,6 +152,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         logout,
         register,
+        updateProfile,
+        clearError,
       }}
     >
       {children}

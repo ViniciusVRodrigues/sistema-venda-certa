@@ -20,7 +20,6 @@ export const HomePage: React.FC = () => {
   const {
     products,
     pagination,
-    availableFilters,
     loading,
     error,
     filters,
@@ -156,9 +155,9 @@ export const HomePage: React.FC = () => {
               filters={filters}
               onFiltersChange={updateFilters}
               onClearFilters={clearFilters}
-              categories={availableFilters.categories}
-              priceRange={availableFilters.priceRange}
-              availableTags={availableFilters.availableTags}
+              categories={[]}
+              priceRange={{ min: 0, max: 1000 }}
+              availableTags={[]}
             />
           </div>
 
@@ -228,9 +227,9 @@ export const HomePage: React.FC = () => {
           filters={filters}
           onFiltersChange={updateFilters}
           onClearFilters={clearFilters}
-          categories={availableFilters.categories}
-          priceRange={availableFilters.priceRange}
-          availableTags={availableFilters.availableTags}
+          categories={[]}
+          priceRange={{ min: 0, max: 1000 }}
+          availableTags={[]}
         />
       </div>
     </div>

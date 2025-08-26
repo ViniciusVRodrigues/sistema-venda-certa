@@ -22,10 +22,20 @@ export const useCatalog = (
       setLoading(true);
       setError(null);
       
+      // Convert CatalogSort to sortBy string
+      let sortBy: 'relevance' | 'price-asc' | 'price-desc' | 'newest' | 'name' = 'relevance';
+      if (sort.field === 'price') {
+        sortBy = sort.direction === 'asc' ? 'price-asc' : 'price-desc';
+      } else if (sort.field === 'name') {
+        sortBy = 'name';
+      } else if (sort.field === 'created_at') {
+        sortBy = 'newest';
+      }
+      
       const response = await catalogService.getProducts(
         filters,
-        sort,
-        { page: currentPage, pageSize }
+        { page: currentPage, pageSize },
+        sortBy
       );
       
       setData(response);
@@ -80,7 +90,7 @@ export const useCatalog = (
     // Data
     products: data?.products || [],
     pagination: data?.pagination || { page: 1, pageSize, total: 0, totalPages: 0 },
-    availableFilters: data?.filters || { categories: [], priceRange: { min: 0, max: 100 }, availableTags: [] },
+    totalProducts: data?.totalProducts || 0,
     
     // State
     loading,
