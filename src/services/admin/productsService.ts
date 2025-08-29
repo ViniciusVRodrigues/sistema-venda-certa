@@ -2,11 +2,46 @@ import type { Product, Category, FilterOptions, PaginationData, SortOption } fro
 
 // Mock data for categories
 const mockCategories: Category[] = [
-  { id: '1', name: 'Eletrônicos', description: 'Produtos eletrônicos e acessórios', isActive: true },
-  { id: '2', name: 'Roupas', description: 'Vestuário e acessórios', isActive: true },
-  { id: '3', name: 'Casa & Jardim', description: 'Itens para casa e jardim', isActive: true },
-  { id: '4', name: 'Esportes', description: 'Equipamentos esportivos', isActive: true },
-  { id: '5', name: 'Livros', description: 'Livros e materiais educativos', isActive: true },
+  { 
+    id: '1', 
+    name: 'Eletrônicos', 
+    description: 'Produtos eletrônicos e acessórios', 
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  { 
+    id: '2', 
+    name: 'Roupas', 
+    description: 'Vestuário e acessórios', 
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  { 
+    id: '3', 
+    name: 'Casa & Jardim', 
+    description: 'Itens para casa e jardim', 
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  { 
+    id: '4', 
+    name: 'Esportes', 
+    description: 'Equipamentos esportivos', 
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  { 
+    id: '5', 
+    name: 'Livros', 
+    description: 'Livros e materiais educativos', 
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
 ];
 
 // Mock data for products
@@ -17,6 +52,7 @@ const mockProducts: Product[] = [
     description: 'Smartphone com tela de 6.1" e câmera de 64MP',
     shortDescription: 'Smartphone Samsung com excelente qualidade',
     category: mockCategories[0],
+    categoryId: '1',
     price: 1299.99,
     unit: 'un',
     stock: 15,
@@ -25,8 +61,26 @@ const mockProducts: Product[] = [
     tags: ['smartphone', 'samsung', 'android'],
     sku: 'SAMS-GAL-001',
     variations: [
-      { id: '1-1', name: '128GB - Preto', price: 1299.99, stock: 10, sku: 'SAMS-GAL-001-128-BK' },
-      { id: '1-2', name: '256GB - Branco', price: 1499.99, stock: 5, sku: 'SAMS-GAL-001-256-WH' }
+      { 
+        id: '1-1', 
+        productId: '1',
+        name: '128GB - Preto', 
+        price: 1299.99, 
+        stock: 10, 
+        sku: 'SAMS-GAL-001-128-BK',
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date('2024-01-20')
+      },
+      { 
+        id: '1-2', 
+        productId: '1',
+        name: '256GB - Branco', 
+        price: 1499.99, 
+        stock: 5, 
+        sku: 'SAMS-GAL-001-256-WH',
+        createdAt: new Date('2024-01-15'),
+        updatedAt: new Date('2024-01-20')
+      }
     ],
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-20'),
@@ -37,6 +91,7 @@ const mockProducts: Product[] = [
     description: 'Camiseta de algodão 100% com corte moderno',
     shortDescription: 'Camiseta básica de algodão',
     category: mockCategories[1],
+    categoryId: '2',
     price: 49.99,
     unit: 'un',
     stock: 50,
@@ -45,9 +100,33 @@ const mockProducts: Product[] = [
     tags: ['camiseta', 'algodão', 'básica'],
     sku: 'CAM-BAS-001',
     variations: [
-      { id: '2-1', name: 'P - Azul', price: 49.99, stock: 15 },
-      { id: '2-2', name: 'M - Azul', price: 49.99, stock: 20 },
-      { id: '2-3', name: 'G - Azul', price: 49.99, stock: 15 },
+      { 
+        id: '2-1', 
+        productId: '2',
+        name: 'P - Azul', 
+        price: 49.99, 
+        stock: 15,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date('2024-01-15')
+      },
+      { 
+        id: '2-2', 
+        productId: '2',
+        name: 'M - Azul', 
+        price: 49.99, 
+        stock: 20,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date('2024-01-15')
+      },
+      { 
+        id: '2-3', 
+        productId: '2',
+        name: 'G - Azul', 
+        price: 49.99, 
+        stock: 15,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date('2024-01-15')
+      },
     ],
     createdAt: new Date('2024-01-10'),
     updatedAt: new Date('2024-01-15'),
@@ -58,6 +137,7 @@ const mockProducts: Product[] = [
     description: 'Headset com microfone e som surround 7.1',
     shortDescription: 'Headset para jogos com qualidade premium',
     category: mockCategories[0],
+    categoryId: '1',
     price: 299.99,
     unit: 'un',
     stock: 8,
@@ -74,6 +154,7 @@ const mockProducts: Product[] = [
     description: 'Mesa de escritório em MDF com gavetas',
     shortDescription: 'Mesa funcional para escritório',
     category: mockCategories[2],
+    categoryId: '3',
     price: 399.99,
     unit: 'un',
     stock: 3,

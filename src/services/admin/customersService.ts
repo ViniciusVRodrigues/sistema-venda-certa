@@ -14,6 +14,7 @@ const mockCustomers: Customer[] = [
     addresses: [
       {
         id: '1',
+        customerId: '1',
         street: 'Rua das Flores',
         number: '123',
         complement: 'Apto 45',
@@ -21,17 +22,22 @@ const mockCustomers: Customer[] = [
         city: 'São Paulo',
         state: 'SP',
         zipCode: '01234-567',
-        isDefault: true
+        isDefault: true,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
       },
       {
         id: '2',
+        customerId: '1',
         street: 'Av. Paulista',
         number: '1000',
         neighborhood: 'Bela Vista',
         city: 'São Paulo',
         state: 'SP',
         zipCode: '01310-100',
-        isDefault: false
+        isDefault: false,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date('2024-01-10')
       }
     ],
     orders: [],
@@ -53,13 +59,16 @@ const mockCustomers: Customer[] = [
     addresses: [
       {
         id: '3',
+        customerId: '2',
         street: 'Rua Augusta',
         number: '456',
         neighborhood: 'Consolação',
         city: 'São Paulo',
         state: 'SP',
         zipCode: '01305-000',
-        isDefault: true
+        isDefault: true,
+        createdAt: new Date('2024-01-05'),
+        updatedAt: new Date('2024-01-05')
       }
     ],
     orders: [],
@@ -80,13 +89,16 @@ const mockCustomers: Customer[] = [
     addresses: [
       {
         id: '4',
+        customerId: '3',
         street: 'Rua Oscar Freire',
         number: '789',
         neighborhood: 'Jardins',
         city: 'São Paulo',
         state: 'SP',
         zipCode: '01426-001',
-        isDefault: true
+        isDefault: true,
+        createdAt: new Date('2024-01-10'),
+        updatedAt: new Date('2024-01-10')
       }
     ],
     orders: [],

@@ -45,12 +45,14 @@ const mockOrders: Order[] = [
     items: [
       {
         id: '1',
+        orderId: '001',
         productId: '1',
         product: {
           id: '1',
           name: 'Smartphone Samsung Galaxy',
           description: 'Smartphone com tela de 6.1"',
-          category: { id: '1', name: 'Eletrônicos', isActive: true },
+          category: { id: '1', name: 'Eletrônicos', isActive: true, createdAt: new Date(), updatedAt: new Date() },
+          categoryId: '1',
           price: 1299.99,
           unit: 'un',
           stock: 15,
@@ -62,21 +64,26 @@ const mockOrders: Order[] = [
         },
         quantity: 1,
         price: 1299.99,
-        variationId: '1-1'
+        variationId: '1-1',
+        createdAt: new Date('2024-01-20T08:15:00')
       }
     ],
     total: 1299.99,
     status: 'delivered',
     deliveryAddress: {
       id: '1',
+      customerId: '1',
       street: 'Rua das Flores',
       number: '123',
       neighborhood: 'Centro',
       city: 'São Paulo',
       state: 'SP',
       zipCode: '01234-567',
-      isDefault: true
+      isDefault: true,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01')
     },
+    deliveryAddressId: '1',
     deliveryMethod: {
       id: '1',
       name: 'Entrega Expressa',
@@ -84,15 +91,21 @@ const mockOrders: Order[] = [
       type: 'delivery',
       price: 15.00,
       estimatedDays: 2,
-      isActive: true
+      isActive: true,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01')
     },
+    deliveryMethodId: '1',
     deliveryFee: 15.00,
     paymentMethod: {
       id: '1',
       name: 'PIX',
       type: 'pix',
-      isActive: true
+      isActive: true,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01')
     },
+    paymentMethodId: '1',
     paymentStatus: 'paid',
     createdAt: new Date('2024-01-20T10:30:00'),
     updatedAt: new Date('2024-01-22T14:20:00'),
@@ -101,6 +114,7 @@ const mockOrders: Order[] = [
     timeline: [
       {
         id: '1',
+        orderId: '001',
         status: 'received',
         timestamp: new Date('2024-01-20T10:30:00'),
         description: 'Pedido recebido',
@@ -108,6 +122,7 @@ const mockOrders: Order[] = [
       },
       {
         id: '2',
+        orderId: '001',
         status: 'processing',
         timestamp: new Date('2024-01-20T15:45:00'),
         description: 'Produto separado para envio',
