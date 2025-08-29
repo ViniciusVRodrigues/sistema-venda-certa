@@ -67,6 +67,30 @@ export const mockUsuarios: Usuario[] = [
     nota: 4.8
   },
   {
+    id: 7,
+    nome: 'Bruno Moto',
+    email: 'bruno.moto@email.com',
+    cargo: 'delivery',
+    numeroCelular: '11999997777',
+    status: 1, // Active
+    totalPedidos: 0,
+    totalGasto: 0,
+    entregasFeitas: 89,
+    nota: 4.6
+  },
+  {
+    id: 8,
+    nome: 'Rafael Express',
+    email: 'rafael.express@email.com',
+    cargo: 'delivery',
+    numeroCelular: '11999998888',
+    status: 1, // Active
+    totalPedidos: 0,
+    totalGasto: 0,
+    entregasFeitas: 203,
+    nota: 4.9
+  },
+  {
     id: 6,
     nome: 'Admin Sistema',
     email: 'admin@email.com',
@@ -356,11 +380,168 @@ export const mockPedidos: Pedido[] = [
     fk_usuario_id: 3,
     fk_metodoEntrega_id: 3,
     fk_endereco_id: 4
+  },
+  // Additional delivery orders for Carlos Entregador (id: 5)
+  {
+    id: 4,
+    status: 3, // Shipped - in route
+    total: 89.75,
+    subtotal: 74.75,
+    taxaEntrega: 15.00,
+    statusPagamento: 2, // Paid
+    anotacoes: 'Apartamento no 4º andar, interfone 45',
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T18:00:00Z'),
+    dataEntrega: undefined,
+    fk_entregador_id: 5,
+    fk_metodoPagamento_id: 1,
+    fk_usuario_id: 1,
+    fk_metodoEntrega_id: 1,
+    fk_endereco_id: 1
+  },
+  {
+    id: 5,
+    status: 3, // Shipped - in route
+    total: 34.49,
+    subtotal: 26.49,
+    taxaEntrega: 8.00,
+    statusPagamento: 2, // Paid
+    anotacoes: 'Entregar com o porteiro se não estiver em casa',
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T19:30:00Z'),
+    dataEntrega: undefined,
+    fk_entregador_id: 5,
+    fk_metodoPagamento_id: 2,
+    fk_usuario_id: 2,
+    fk_metodoEntrega_id: 2,
+    fk_endereco_id: 3
+  },
+  {
+    id: 6,
+    status: 2, // Processing - ready for pickup
+    total: 56.90,
+    subtotal: 48.90,
+    taxaEntrega: 8.00,
+    statusPagamento: 2, // Paid
+    anotacoes: 'Cliente solicita produtos bem maduros',
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T20:00:00Z'),
+    dataEntrega: undefined,
+    fk_entregador_id: 5,
+    fk_metodoPagamento_id: 3,
+    fk_usuario_id: 3,
+    fk_metodoEntrega_id: 2,
+    fk_endereco_id: 4
+  },
+  // Orders for Bruno Moto (id: 7)
+  {
+    id: 7,
+    status: 3, // Shipped - in route
+    total: 127.25,
+    subtotal: 112.25,
+    taxaEntrega: 15.00,
+    statusPagamento: 2, // Paid
+    anotacoes: 'Casa com portão azul, cuidado com o cachorro',
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T17:45:00Z'),
+    dataEntrega: undefined,
+    fk_entregador_id: 7,
+    fk_metodoPagamento_id: 1,
+    fk_usuario_id: 1,
+    fk_metodoEntrega_id: 1,
+    fk_endereco_id: 2
+  },
+  {
+    id: 8,
+    status: 4, // Delivered today
+    total: 68.40,
+    subtotal: 60.40,
+    taxaEntrega: 8.00,
+    statusPagamento: 2, // Paid
+    anotacoes: undefined,
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T15:00:00Z'),
+    dataEntrega: new Date('2024-01-25T14:45:00Z'),
+    fk_entregador_id: 7,
+    fk_metodoPagamento_id: 4,
+    fk_usuario_id: 2,
+    fk_metodoEntrega_id: 2,
+    fk_endereco_id: 3
+  },
+  {
+    id: 9,
+    status: 4, // Delivered today
+    total: 43.50,
+    subtotal: 35.50,
+    taxaEntrega: 8.00,
+    statusPagamento: 2, // Paid
+    anotacoes: undefined,
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T12:30:00Z'),
+    dataEntrega: new Date('2024-01-25T12:15:00Z'),
+    fk_entregador_id: 7,
+    fk_metodoPagamento_id: 1,
+    fk_usuario_id: 3,
+    fk_metodoEntrega_id: 2,
+    fk_endereco_id: 4
+  },
+  // Orders for Rafael Express (id: 8)
+  {
+    id: 10,
+    status: 2, // Processing - ready for pickup
+    total: 95.30,
+    subtotal: 80.30,
+    taxaEntrega: 15.00,
+    statusPagamento: 2, // Paid
+    anotacoes: 'Pedido especial para festa de aniversário',
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T21:00:00Z'),
+    dataEntrega: undefined,
+    fk_entregador_id: 8,
+    fk_metodoPagamento_id: 2,
+    fk_usuario_id: 1,
+    fk_metodoEntrega_id: 1,
+    fk_endereco_id: 1
+  },
+  {
+    id: 11,
+    status: 4, // Delivered today
+    total: 78.85,
+    subtotal: 70.85,
+    taxaEntrega: 8.00,
+    statusPagamento: 2, // Paid
+    anotacoes: undefined,
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T16:00:00Z'),
+    dataEntrega: new Date('2024-01-25T15:50:00Z'),
+    fk_entregador_id: 8,
+    fk_metodoPagamento_id: 1,
+    fk_usuario_id: 2,
+    fk_metodoEntrega_id: 2,
+    fk_endereco_id: 3
+  },
+  {
+    id: 12,
+    status: 4, // Delivered today
+    total: 152.90,
+    subtotal: 137.90,
+    taxaEntrega: 15.00,
+    statusPagamento: 2, // Paid
+    anotacoes: undefined,
+    motivoCancelamento: undefined,
+    estimativaEntrega: new Date('2024-01-25T13:00:00Z'),
+    dataEntrega: new Date('2024-01-25T12:55:00Z'),
+    fk_entregador_id: 8,
+    fk_metodoPagamento_id: 3,
+    fk_usuario_id: 3,
+    fk_metodoEntrega_id: 1,
+    fk_endereco_id: 4
   }
 ];
 
 // Mock produtos dos pedidos (database schema)
 export const mockProdutosPedido: ProdutoPedido[] = [
+  // Pedido 1 items
   {
     id: 1,
     quantidade: 2,
@@ -382,6 +563,7 @@ export const mockProdutosPedido: ProdutoPedido[] = [
     fk_produto_id: 3,
     fk_pedido_id: 1
   },
+  // Pedido 2 items
   {
     id: 4,
     quantidade: 3,
@@ -403,6 +585,7 @@ export const mockProdutosPedido: ProdutoPedido[] = [
     fk_produto_id: 2,
     fk_pedido_id: 2
   },
+  // Pedido 3 items
   {
     id: 7,
     quantidade: 1,
@@ -416,11 +599,154 @@ export const mockProdutosPedido: ProdutoPedido[] = [
     preco: 6.50,
     fk_produto_id: 2,
     fk_pedido_id: 3
+  },
+  // Pedido 4 items (Carlos - in route)
+  {
+    id: 9,
+    quantidade: 4,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 4
+  },
+  {
+    id: 10,
+    quantidade: 2,
+    preco: 18.99,
+    fk_produto_id: 5,
+    fk_pedido_id: 4
+  },
+  // Pedido 5 items (Carlos - in route)
+  {
+    id: 11,
+    quantidade: 3,
+    preco: 6.50,
+    fk_produto_id: 2,
+    fk_pedido_id: 5
+  },
+  {
+    id: 12,
+    quantidade: 2,
+    preco: 3.99,
+    fk_produto_id: 3,
+    fk_pedido_id: 5
+  },
+  // Pedido 6 items (Carlos - processing)
+  {
+    id: 13,
+    quantidade: 5,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 6
+  },
+  {
+    id: 14,
+    quantidade: 1,
+    preco: 3.99,
+    fk_produto_id: 3,
+    fk_pedido_id: 6
+  },
+  // Pedido 7 items (Bruno - in route)
+  {
+    id: 15,
+    quantidade: 6,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 7
+  },
+  {
+    id: 16,
+    quantidade: 3,
+    preco: 18.99,
+    fk_produto_id: 5,
+    fk_pedido_id: 7
+  },
+  // Pedido 8 items (Bruno - delivered today)
+  {
+    id: 17,
+    quantidade: 4,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 8
+  },
+  {
+    id: 18,
+    quantidade: 3,
+    preco: 6.50,
+    fk_produto_id: 2,
+    fk_pedido_id: 8
+  },
+  // Pedido 9 items (Bruno - delivered today)
+  {
+    id: 19,
+    quantidade: 2,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 9
+  },
+  {
+    id: 20,
+    quantidade: 3,
+    preco: 6.50,
+    fk_produto_id: 2,
+    fk_pedido_id: 9
+  },
+  // Pedido 10 items (Rafael - processing)
+  {
+    id: 21,
+    quantidade: 4,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 10
+  },
+  {
+    id: 22,
+    quantidade: 2,
+    preco: 18.99,
+    fk_produto_id: 5,
+    fk_pedido_id: 10
+  },
+  {
+    id: 23,
+    quantidade: 5,
+    preco: 6.50,
+    fk_produto_id: 2,
+    fk_pedido_id: 10
+  },
+  // Pedido 11 items (Rafael - delivered today)
+  {
+    id: 24,
+    quantidade: 6,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 11
+  },
+  {
+    id: 25,
+    quantidade: 3,
+    preco: 6.50,
+    fk_produto_id: 2,
+    fk_pedido_id: 11
+  },
+  // Pedido 12 items (Rafael - delivered today)
+  {
+    id: 26,
+    quantidade: 8,
+    preco: 8.99,
+    fk_produto_id: 1,
+    fk_pedido_id: 12
+  },
+  {
+    id: 27,
+    quantidade: 3,
+    preco: 18.99,
+    fk_produto_id: 5,
+    fk_pedido_id: 12
   }
 ];
 
 // Mock atualizacoes de pedidos (database schema)
 export const mockAtualizacoesPedido: AtualizacaoPedido[] = [
+  // Pedido 1 timeline (completed)
   {
     id: 1,
     status: 1, // Received
@@ -453,6 +779,7 @@ export const mockAtualizacoesPedido: AtualizacaoPedido[] = [
     fk_usuario_id: 5,
     fk_pedido_id: 1
   },
+  // Pedido 2 timeline (processing)
   {
     id: 5,
     status: 1, // Received
@@ -469,6 +796,7 @@ export const mockAtualizacoesPedido: AtualizacaoPedido[] = [
     fk_usuario_id: 6,
     fk_pedido_id: 2
   },
+  // Pedido 3 timeline (cancelled)
   {
     id: 7,
     status: 1, // Received
@@ -484,6 +812,247 @@ export const mockAtualizacoesPedido: AtualizacaoPedido[] = [
     descricao: 'Pedido cancelado a pedido do cliente',
     fk_usuario_id: 6,
     fk_pedido_id: 3
+  },
+  // Pedido 4 timeline (Carlos - in route)
+  {
+    id: 9,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T10:00:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 4
+  },
+  {
+    id: 10,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T11:00:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 4
+  },
+  {
+    id: 11,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T15:30:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 5,
+    fk_pedido_id: 4
+  },
+  // Pedido 5 timeline (Carlos - in route)
+  {
+    id: 12,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T11:30:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 5
+  },
+  {
+    id: 13,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T12:30:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 5
+  },
+  {
+    id: 14,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T16:00:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 5,
+    fk_pedido_id: 5
+  },
+  // Pedido 6 timeline (Carlos - processing)
+  {
+    id: 15,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T13:00:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 6
+  },
+  {
+    id: 16,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T14:00:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 6
+  },
+  // Pedido 7 timeline (Bruno - in route)
+  {
+    id: 17,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T09:00:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 7
+  },
+  {
+    id: 18,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T10:30:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 7
+  },
+  {
+    id: 19,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T14:30:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 7,
+    fk_pedido_id: 7
+  },
+  // Pedido 8 timeline (Bruno - delivered today)
+  {
+    id: 20,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T08:00:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 8
+  },
+  {
+    id: 21,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T09:00:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 8
+  },
+  {
+    id: 22,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T13:00:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 7,
+    fk_pedido_id: 8
+  },
+  {
+    id: 23,
+    status: 4, // Delivered
+    timestamp: new Date('2024-01-25T14:45:00Z'),
+    descricao: 'Pedido entregue com sucesso',
+    fk_usuario_id: 7,
+    fk_pedido_id: 8
+  },
+  // Pedido 9 timeline (Bruno - delivered today)
+  {
+    id: 24,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T07:30:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 9
+  },
+  {
+    id: 25,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T08:30:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 9
+  },
+  {
+    id: 26,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T11:00:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 7,
+    fk_pedido_id: 9
+  },
+  {
+    id: 27,
+    status: 4, // Delivered
+    timestamp: new Date('2024-01-25T12:15:00Z'),
+    descricao: 'Pedido entregue com sucesso',
+    fk_usuario_id: 7,
+    fk_pedido_id: 9
+  },
+  // Pedido 10 timeline (Rafael - processing)
+  {
+    id: 28,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T14:30:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 10
+  },
+  {
+    id: 29,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T15:30:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 10
+  },
+  // Pedido 11 timeline (Rafael - delivered today)
+  {
+    id: 30,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T08:30:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 11
+  },
+  {
+    id: 31,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T09:30:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 11
+  },
+  {
+    id: 32,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T14:00:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 8,
+    fk_pedido_id: 11
+  },
+  {
+    id: 33,
+    status: 4, // Delivered
+    timestamp: new Date('2024-01-25T15:50:00Z'),
+    descricao: 'Pedido entregue com sucesso',
+    fk_usuario_id: 8,
+    fk_pedido_id: 11
+  },
+  // Pedido 12 timeline (Rafael - delivered today)
+  {
+    id: 34,
+    status: 1, // Received
+    timestamp: new Date('2024-01-25T07:00:00Z'),
+    descricao: 'Pedido recebido e confirmado',
+    fk_usuario_id: 6,
+    fk_pedido_id: 12
+  },
+  {
+    id: 35,
+    status: 2, // Processing
+    timestamp: new Date('2024-01-25T08:00:00Z'),
+    descricao: 'Pedido em preparação',
+    fk_usuario_id: 6,
+    fk_pedido_id: 12
+  },
+  {
+    id: 36,
+    status: 3, // Shipped
+    timestamp: new Date('2024-01-25T11:30:00Z'),
+    descricao: 'Pedido saiu para entrega',
+    fk_usuario_id: 8,
+    fk_pedido_id: 12
+  },
+  {
+    id: 37,
+    status: 4, // Delivered
+    timestamp: new Date('2024-01-25T12:55:00Z'),
+    descricao: 'Pedido entregue com sucesso',
+    fk_usuario_id: 8,
+    fk_pedido_id: 12
   }
 ];
 
