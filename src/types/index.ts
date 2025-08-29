@@ -50,8 +50,8 @@ export interface Endereco {
 }
 
 // Legacy compatibility alias
-export interface Address extends Endereco {
-  // Map legacy fields to new ones for compatibility
+export interface Address {
+  id: number;
   street: string;
   number: string;
   complement?: string;
@@ -71,7 +71,8 @@ export interface Categoria {
 }
 
 // Legacy compatibility alias
-export interface Category extends Categoria {
+export interface Category {
+  id: number;
   name: string;
   description?: string;
   isActive: boolean;
