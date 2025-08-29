@@ -1,196 +1,24 @@
 import type { Customer, Order, FilterOptions, PaginationData, SortOption } from '../../types';
+import { mockUsuarios, mockEnderecos, mockPedidos } from '../mock/databaseMockData';
+import { usuarioToCustomer, pedidoToOrder } from '../../utils/typeConverters';
 
-// Extended mock customers data
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'João Silva',
-    email: 'joao.silva@email.com',
-    role: 'customer',
-    phone: '(11) 99999-1111',
-    avatar: '/images/avatars/joao.jpg',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-15'),
-    addresses: [
-      {
-        id: '1',
-        customerId: '1',
-        street: 'Rua das Flores',
-        number: '123',
-        complement: 'Apto 45',
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '01234-567',
-        isDefault: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01')
-      },
-      {
-        id: '2',
-        customerId: '1',
-        street: 'Av. Paulista',
-        number: '1000',
-        neighborhood: 'Bela Vista',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '01310-100',
-        isDefault: false,
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-10')
-      }
-    ],
-    orders: [],
-    isVip: false,
-    isBlocked: false,
-    totalOrders: 5,
-    totalSpent: 1250.45,
-    lastOrderDate: new Date('2024-01-20')
-  },
-  {
-    id: '2',
-    name: 'Maria Santos',
-    email: 'maria.santos@email.com',
-    role: 'customer',
-    phone: '(11) 99999-2222',
-    avatar: '/images/avatars/maria.jpg',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-18'),
-    addresses: [
-      {
-        id: '3',
-        customerId: '2',
-        street: 'Rua Augusta',
-        number: '456',
-        neighborhood: 'Consolação',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '01305-000',
-        isDefault: true,
-        createdAt: new Date('2024-01-05'),
-        updatedAt: new Date('2024-01-05')
-      }
-    ],
-    orders: [],
-    isVip: true,
-    isBlocked: false,
-    totalOrders: 12,
-    totalSpent: 2890.75,
-    lastOrderDate: new Date('2024-01-22')
-  },
-  {
-    id: '3',
-    name: 'Pedro Costa',
-    email: 'pedro.costa@email.com',
-    role: 'customer',
-    phone: '(11) 99999-3333',
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-12'),
-    addresses: [
-      {
-        id: '4',
-        customerId: '3',
-        street: 'Rua Oscar Freire',
-        number: '789',
-        neighborhood: 'Jardins',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '01426-001',
-        isDefault: true,
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-10')
-      }
-    ],
-    orders: [],
-    isVip: false,
-    isBlocked: false,
-    totalOrders: 3,
-    totalSpent: 567.89,
-    lastOrderDate: new Date('2024-01-15')
-  },
-  {
-    id: '4',
-    name: 'Ana Oliveira',
-    email: 'ana.oliveira@email.com',
-    role: 'customer',
-    phone: '(11) 99999-4444',
-    createdAt: new Date('2024-01-12'),
-    updatedAt: new Date('2024-01-14'),
-    addresses: [
-      {
-        id: '5',
-        street: 'Av. Faria Lima',
-        number: '1234',
-        complement: 'Sala 567',
-        neighborhood: 'Itaim Bibi',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '04538-132',
-        isDefault: true
-      }
-    ],
-    orders: [],
-    isVip: false,
-    isBlocked: false,
-    totalOrders: 8,
-    totalSpent: 1890.32,
-    lastOrderDate: new Date('2024-01-19')
-  },
-  {
-    id: '5',
-    name: 'Carlos Ferreira',
-    email: 'carlos.ferreira@email.com',
-    role: 'customer',
-    phone: '(11) 99999-5555',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-10'),
-    addresses: [
-      {
-        id: '6',
-        street: 'Rua da Consolação',
-        number: '987',
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '01301-000',
-        isDefault: true
-      }
-    ],
-    orders: [],
-    isVip: false,
-    isBlocked: true, // Blocked customer
-    totalOrders: 2,
-    totalSpent: 123.45,
-    lastOrderDate: new Date('2024-01-10')
-  },
-  {
-    id: '6',
-    name: 'Fernanda Lima',
-    email: 'fernanda.lima@email.com',
-    role: 'customer',
-    phone: '(11) 99999-6666',
-    createdAt: new Date('2023-12-15'),
-    updatedAt: new Date('2024-01-25'),
-    addresses: [
-      {
-        id: '7',
-        street: 'Av. Brigadeiro Faria Lima',
-        number: '2000',
-        neighborhood: 'Pinheiros',
-        city: 'São Paulo',
-        state: 'SP',
-        zipCode: '05426-200',
-        isDefault: true
-      }
-    ],
-    orders: [],
-    isVip: true,
-    isBlocked: false,
-    totalOrders: 25,
-    totalSpent: 5678.90,
-    lastOrderDate: new Date('2024-01-25')
-  }
-];
+// Convert database mock data to legacy format for backward compatibility
+function getCustomersFromDatabase(): Customer[] {
+  return mockUsuarios
+    .filter(usuario => usuario.cargo === 'customer')
+    .map(usuario => {
+      // Get addresses for this user
+      const addresses = mockEnderecos.filter(endereco => endereco.fk_usuario_id === usuario.id);
+      
+      // Get orders for this user
+      const orders = mockPedidos.filter(pedido => pedido.fk_usuario_id === usuario.id);
+      
+      return usuarioToCustomer(usuario, addresses, orders);
+    });
+}
+
+// Use the converted data
+const mockCustomers: Customer[] = getCustomersFromDatabase();
 
 interface CustomersResponse {
   customers: Customer[];
@@ -242,20 +70,43 @@ export const customersService = {
 
     // Apply sorting
     filteredCustomers.sort((a, b) => {
+      const { field, direction } = sort;
       let aValue: any, bValue: any;
-      
-      if (sort.field === 'averageTicket') {
-        aValue = a.totalOrders > 0 ? a.totalSpent / a.totalOrders : 0;
-        bValue = b.totalOrders > 0 ? b.totalSpent / b.totalOrders : 0;
-      } else {
-        aValue = a[sort.field as keyof Customer] as any;
-        bValue = b[sort.field as keyof Customer] as any;
+
+      switch (field) {
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'email':
+          aValue = a.email;
+          bValue = b.email;
+          break;
+        case 'totalOrders':
+          aValue = a.totalOrders;
+          bValue = b.totalOrders;
+          break;
+        case 'totalSpent':
+          aValue = a.totalSpent;
+          bValue = b.totalSpent;
+          break;
+        case 'lastOrderDate':
+          aValue = a.lastOrderDate?.getTime() || 0;
+          bValue = b.lastOrderDate?.getTime() || 0;
+          break;
+        case 'createdAt':
+          aValue = a.createdAt.getTime();
+          bValue = b.createdAt.getTime();
+          break;
+        default:
+          aValue = a.name;
+          bValue = b.name;
       }
-      
-      if (sort.direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 
@@ -276,80 +127,101 @@ export const customersService = {
   },
 
   // Get single customer by ID
-  async getCustomer(id: string): Promise<Customer | null> {
+  async getCustomer(id: string | number): Promise<Customer | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return mockCustomers.find(customer => customer.id === id) || null;
+    
+    const customerId = typeof id === 'string' ? parseInt(id) : id;
+    const customer = mockCustomers.find(c => {
+      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return cId === customerId;
+    });
+    
+    return customer || null;
   },
 
-  // Get customer's order history
-  async getCustomerOrders(customerId: string): Promise<Order[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // This would normally fetch from orders service, but for mock purposes
-    // we'll return a simplified version
-    const mockOrders: Order[] = [
-      {
-        id: '001',
-        customerId,
-        customer: mockCustomers.find(c => c.id === customerId)!,
-        items: [],
-        total: 299.99,
-        status: 'delivered',
-        deliveryAddress: mockCustomers.find(c => c.id === customerId)?.addresses[0]!,
-        deliveryMethod: {
-          id: '1',
-          name: 'Entrega Normal',
-          description: '',
-          type: 'delivery',
-          price: 10,
-          estimatedDays: 3,
-          isActive: true
-        },
-        deliveryFee: 10,
-        paymentMethod: {
-          id: '1',
-          name: 'PIX',
-          type: 'pix',
-          isActive: true
-        },
-        paymentStatus: 'paid',
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-18'),
-        timeline: []
-      }
-    ];
+  // Create new customer
+  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'addresses' | 'orders'>): Promise<Customer> {
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    return mockOrders;
+    const newCustomer: Customer = {
+      ...customerData,
+      id: (mockCustomers.length + 1).toString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      addresses: [],
+      orders: [],
+      totalOrders: 0,
+      totalSpent: 0
+    };
+
+    mockCustomers.push(newCustomer);
+    return newCustomer;
   },
 
-  // Update customer VIP status
-  async updateVipStatus(customerId: string, isVip: boolean): Promise<Customer> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const customerIndex = mockCustomers.findIndex(customer => customer.id === customerId);
+  // Update customer
+  async updateCustomer(id: string | number, updates: Partial<Customer>): Promise<Customer | null> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const customerId = typeof id === 'string' ? parseInt(id) : id;
+    const customerIndex = mockCustomers.findIndex(c => {
+      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return cId === customerId;
+    });
+
     if (customerIndex === -1) {
-      throw new Error('Cliente não encontrado');
+      return null;
     }
 
-    mockCustomers[customerIndex].isVip = isVip;
-    mockCustomers[customerIndex].updatedAt = new Date();
+    const updatedCustomer = {
+      ...mockCustomers[customerIndex],
+      ...updates,
+      updatedAt: new Date()
+    };
 
-    return mockCustomers[customerIndex];
+    mockCustomers[customerIndex] = updatedCustomer;
+    return updatedCustomer;
   },
 
-  // Update customer blocked status
-  async updateBlockedStatus(customerId: string, isBlocked: boolean): Promise<Customer> {
+  // Delete customer
+  async deleteCustomer(id: string | number): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const customerIndex = mockCustomers.findIndex(customer => customer.id === customerId);
+
+    const customerId = typeof id === 'string' ? parseInt(id) : id;
+    const customerIndex = mockCustomers.findIndex(c => {
+      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return cId === customerId;
+    });
+
     if (customerIndex === -1) {
-      throw new Error('Cliente não encontrado');
+      return false;
     }
 
-    mockCustomers[customerIndex].isBlocked = isBlocked;
-    mockCustomers[customerIndex].updatedAt = new Date();
+    mockCustomers.splice(customerIndex, 1);
+    return true;
+  },
 
-    return mockCustomers[customerIndex];
+  // Toggle customer VIP status
+  async toggleVipStatus(id: string | number): Promise<Customer | null> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const customer = await this.getCustomer(id);
+    if (!customer) {
+      return null;
+    }
+
+    return this.updateCustomer(id, { isVip: !customer.isVip });
+  },
+
+  // Toggle customer blocked status
+  async toggleBlockedStatus(id: string | number): Promise<Customer | null> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const customer = await this.getCustomer(id);
+    if (!customer) {
+      return null;
+    }
+
+    return this.updateCustomer(id, { isBlocked: !customer.isBlocked });
   },
 
   // Get customer statistics
@@ -359,104 +231,43 @@ export const customersService = {
     blocked: number;
     vip: number;
     newThisMonth: number;
-    averageTicket: number;
     totalRevenue: number;
   }> {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const stats = {
-      total: mockCustomers.length,
-      active: mockCustomers.filter(c => !c.isBlocked).length,
-      blocked: mockCustomers.filter(c => c.isBlocked).length,
-      vip: mockCustomers.filter(c => c.isVip).length,
-      newThisMonth: mockCustomers.filter(c => c.createdAt >= monthStart).length,
-      averageTicket: 0,
-      totalRevenue: 0
-    };
-
-    const totalSpent = mockCustomers.reduce((sum, customer) => sum + customer.totalSpent, 0);
-    const totalOrders = mockCustomers.reduce((sum, customer) => sum + customer.totalOrders, 0);
-
-    stats.averageTicket = totalOrders > 0 ? totalSpent / totalOrders : 0;
-    stats.totalRevenue = totalSpent;
+    const stats = mockCustomers.reduce(
+      (acc, customer) => {
+        acc.total++;
+        if (!customer.isBlocked) acc.active++;
+        if (customer.isBlocked) acc.blocked++;
+        if (customer.isVip) acc.vip++;
+        if (customer.createdAt >= startOfMonth) acc.newThisMonth++;
+        acc.totalRevenue += customer.totalSpent;
+        return acc;
+      },
+      {
+        total: 0,
+        active: 0,
+        blocked: 0,
+        vip: 0,
+        newThisMonth: 0,
+        totalRevenue: 0
+      }
+    );
 
     return stats;
   },
 
-  // Get top customers by spending
-  async getTopCustomers(limit: number = 10): Promise<Customer[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    return [...mockCustomers]
-      .sort((a, b) => b.totalSpent - a.totalSpent)
-      .slice(0, limit);
-  },
-
-  // Search customers (enhanced search with multiple criteria)
-  async searchCustomers(query: string): Promise<Customer[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    const queryLower = query.toLowerCase();
-    return mockCustomers.filter(customer =>
-      customer.name.toLowerCase().includes(queryLower) ||
-      customer.email.toLowerCase().includes(queryLower) ||
-      customer.phone?.toLowerCase().includes(queryLower) ||
-      customer.addresses.some(address => 
-        address.neighborhood.toLowerCase().includes(queryLower) ||
-        address.city.toLowerCase().includes(queryLower) ||
-        address.zipCode.includes(query)
-      )
-    );
-  },
-
-  // Create new customer
-  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>): Promise<Customer> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const newCustomer: Customer = {
-      ...customerData,
-      id: Date.now().toString(),
-      orders: [],
-      totalOrders: 0,
-      totalSpent: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    mockCustomers.push(newCustomer);
-    return newCustomer;
-  },
-
-  // Update existing customer
-  async updateCustomer(id: string, customerData: Partial<Customer>): Promise<Customer> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const customerIndex = mockCustomers.findIndex(customer => customer.id === id);
-    if (customerIndex === -1) {
-      throw new Error('Cliente não encontrado');
-    }
-
-    mockCustomers[customerIndex] = {
-      ...mockCustomers[customerIndex],
-      ...customerData,
-      updatedAt: new Date()
-    };
-
-    return mockCustomers[customerIndex];
-  },
-
-  // Delete customer
-  async deleteCustomer(id: string): Promise<void> {
+  // Get customer orders
+  async getCustomerOrders(customerId: string | number): Promise<Order[]> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const customerIndex = mockCustomers.findIndex(customer => customer.id === id);
-    if (customerIndex === -1) {
-      throw new Error('Cliente não encontrado');
-    }
 
-    mockCustomers.splice(customerIndex, 1);
+    // This would normally fetch from orders service
+    // For now, return the orders already in the customer object
+    const customer = await this.getCustomer(customerId);
+    return customer?.orders || [];
   }
 };
