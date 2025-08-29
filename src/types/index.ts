@@ -36,6 +36,7 @@ export interface Delivery extends User {
 
 export interface Address {
   id: string;
+  customerId?: string;
   street: string;
   number: string;
   complement?: string;
@@ -44,6 +45,8 @@ export interface Address {
   state: string;
   zipCode: string;
   isDefault: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Product {
@@ -52,6 +55,7 @@ export interface Product {
   description: string;
   shortDescription?: string;
   category: Category;
+  categoryId?: string;
   price: number;
   unit: string;
   variations?: ProductVariation[];
@@ -66,6 +70,7 @@ export interface Product {
 
 export interface ProductVariation {
   id: string;
+  productId?: string;
   name: string;
   price: number;
   stock: number;
@@ -76,6 +81,8 @@ export interface ProductVariation {
     width: number;
     height: number;
   };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CartItem {
@@ -94,9 +101,12 @@ export interface Order {
   total: number;
   status: 'received' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   deliveryAddress: Address;
+  deliveryAddressId?: string;
   deliveryMethod: DeliveryMethod;
+  deliveryMethodId?: string;
   deliveryFee: number;
   paymentMethod: PaymentMethod;
+  paymentMethodId?: string;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   createdAt: Date;
   updatedAt: Date;
@@ -111,12 +121,14 @@ export interface Order {
 
 export interface OrderItem {
   id: string;
+  orderId?: string;
   productId: string;
   product: Product;
   quantity: number;
   price: number;
   variationId?: string;
   variation?: ProductVariation;
+  createdAt?: Date;
 }
 
 export interface DeliveryMethod {
@@ -129,10 +141,13 @@ export interface DeliveryMethod {
   isActive: boolean;
   regions?: DeliveryRegion[];
   schedule?: DeliverySchedule[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface DeliveryRegion {
   id: string;
+  deliveryMethodId?: string;
   name: string;
   zipCodeStart: string;
   zipCodeEnd: string;
@@ -143,6 +158,7 @@ export interface DeliveryRegion {
 
 export interface DeliverySchedule {
   id: string;
+  deliveryMethodId?: string;
   dayOfWeek: number; // 0-6, 0 = Sunday
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
@@ -155,6 +171,8 @@ export interface PaymentMethod {
   type: 'credit_card' | 'debit_card' | 'pix' | 'bank_transfer' | 'cash';
   isActive: boolean;
   config?: PaymentMethodConfig;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface PaymentMethodConfig {
@@ -166,6 +184,7 @@ export interface PaymentMethodConfig {
 
 export interface Notification {
   id: string;
+  userId?: string;
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
@@ -188,11 +207,14 @@ export interface Category {
   name: string;
   description?: string;
   isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // New admin-specific types
 export interface OrderTimelineEvent {
   id: string;
+  orderId?: string;
   status: Order['status'];
   timestamp: Date;
   description: string;
@@ -275,4 +297,91 @@ export interface PaginationData {
 export interface SortOption {
   field: string;
   direction: 'asc' | 'desc';
+}
+
+// Form DTOs for creating/updating entities
+export interface CustomerFormData {
+  name: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  isVip?: boolean;
+  isBlocked?: boolean;
+}
+
+export interface ProductFormData {
+  name: string;
+  description: string;
+  shortDescription?: string;
+  categoryId: string;
+  price: number;
+  unit: string;
+  stock: number;
+  status: 'active' | 'inactive' | 'out_of_stock';
+  images: string[];
+  tags: string[];
+  sku?: string;
+}
+
+export interface CategoryFormData {
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface AddressFormData {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isDefault?: boolean;
+}
+
+export interface DeliveryMethodFormData {
+  name: string;
+  description: string;
+  type: 'pickup' | 'delivery' | 'fixed_shipping';
+  price: number;
+  estimatedDays: number;
+  isActive: boolean;
+}
+
+export interface PaymentMethodFormData {
+  name: string;
+  type: 'credit_card' | 'debit_card' | 'pix' | 'bank_transfer' | 'cash';
+  isActive: boolean;
+  config?: PaymentMethodConfig;
+}
+
+// Database constraint types
+export interface DatabaseConstraints {
+  users: {
+    maxNameLength: 255;
+    maxEmailLength: 255;
+    maxPhoneLength: 20;
+    maxAvatarLength: 500;
+  };
+  products: {
+    maxNameLength: 255;
+    maxShortDescriptionLength: 500;
+    maxUnitLength: 10;
+    maxSkuLength: 100;
+    maxPrice: number;
+    minPrice: number;
+  };
+  categories: {
+    maxNameLength: 100;
+  };
+  addresses: {
+    maxStreetLength: 255;
+    maxNumberLength: 20;
+    maxComplementLength: 255;
+    maxNeighborhoodLength: 100;
+    maxCityLength: 100;
+    maxStateLength: 2;
+    maxZipCodeLength: 10;
+  };
 }
