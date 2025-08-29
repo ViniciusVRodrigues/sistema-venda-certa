@@ -1,42 +1,57 @@
-export interface User {
-  id: string;
-  name: string;
+// Database schema aligned interfaces
+export interface Usuario {
+  id: number;
+  nome: string;
   email: string;
-  role: 'admin' | 'customer' | 'delivery';
-  phone?: string;
-  avatar?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  cargo: string;
+  numeroCelular?: string;
+  status: number; // TINYINT
+  totalPedidos: number;
+  totalGasto: number; // DECIMAL(10,2)
+  entregasFeitas: number;
+  nota?: number; // DECIMAL(2,1)
 }
 
-export interface Customer extends User {
-  role: 'customer';
-  addresses: Address[];
-  orders: Order[];
-  isVip: boolean;
-  isBlocked: boolean;
-  totalOrders: number;
-  totalSpent: number;
-  lastOrderDate?: Date;
+// Legacy compatibility interfaces - extend Usuario with different role types
+export interface Customer extends Usuario {
+  cargo: 'customer';
+  addresses?: Endereco[];
+  orders?: Pedido[];
 }
 
-export interface Admin extends User {
-  role: 'admin';
-  permissions: string[];
+export interface Admin extends Usuario {
+  cargo: 'admin';
+  permissions?: string[];
 }
 
-export interface Delivery extends User {
-  role: 'delivery';
-  isActive: boolean;
+export interface Delivery extends Usuario {
+  cargo: 'delivery';
   vehicle?: string;
-  assignedOrders: string[];
-  completedDeliveries: number;
-  rating?: number;
+  assignedOrders?: number[];
 }
 
-export interface Address {
-  id: string;
-  customerId?: string;
+// Alias for backward compatibility
+export interface User extends Usuario {}
+export interface Entregador extends Usuario {
+  cargo: 'delivery';
+}
+
+export interface Endereco {
+  id: number;
+  rua: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string; // Note: schema has typo "VACHAR(2)" but should be VARCHAR(2)
+  cep: string;
+  favorito: boolean;
+  fk_usuario_id: number;
+}
+
+// Legacy compatibility alias
+export interface Address extends Endereco {
+  // Map legacy fields to new ones for compatibility
   street: string;
   number: string;
   complement?: string;
@@ -45,17 +60,46 @@ export interface Address {
   state: string;
   zipCode: string;
   isDefault: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  customerId: number;
 }
 
-export interface Product {
-  id: string;
+export interface Categoria {
+  id: number;
+  nome: string;
+  descricao?: string;
+  estaAtiva: boolean;
+}
+
+// Legacy compatibility alias
+export interface Category extends Categoria {
   name: string;
-  description: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Produto {
+  id: number;
+  sku?: string;
+  nome: string;
+  descricao?: string; // TEXT field
+  descricaoResumida?: string;
+  preco: number; // DECIMAL(10,2)
+  medida: string;
+  estoque: number;
+  status: number; // TINYINT
+  imagem?: Uint8Array; // MEDIUMBLOB - represented as Uint8Array for binary data
+  tags?: string;
+  fk_categoria_id: number;
+}
+
+// Legacy compatibility interface
+export interface Product {
+  id: number;
+  name: string;
+  description?: string;
   shortDescription?: string;
-  category: Category;
-  categoryId?: string;
+  category?: Category;
+  categoryId: number;
   price: number;
   unit: string;
   variations?: ProductVariation[];
@@ -64,13 +108,12 @@ export interface Product {
   images: string[];
   tags: string[];
   sku?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
+// ProductVariation is not in the database schema - keeping for compatibility but not aligned with DB
 export interface ProductVariation {
-  id: string;
-  productId?: string;
+  id: number;
+  productId?: number;
   name: string;
   price: number;
   stock: number;
@@ -81,73 +124,160 @@ export interface ProductVariation {
     width: number;
     height: number;
   };
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface CartItem {
-  productId: string;
+  productId: number;
   product: Product;
   quantity: number;
-  variationId?: string;
+  variationId?: number;
   variation?: ProductVariation;
 }
 
+export interface Pedido {
+  id: number;
+  status: number; // TINYINT
+  total: number; // DECIMAL(10,2)
+  subtotal: number; // DECIMAL(10,2)
+  taxaEntrega: number; // DECIMAL(10,2)
+  statusPagamento: number; // TINYINT
+  anotacoes?: string; // TEXT
+  motivoCancelamento?: string; // TEXT
+  estimativaEntrega?: Date; // DATETIME
+  dataEntrega?: Date; // DATETIME
+  fk_entregador_id?: number;
+  fk_metodoPagamento_id: number;
+  fk_usuario_id: number;
+  fk_metodoEntrega_id: number;
+  fk_endereco_id: number;
+}
+
+// Legacy compatibility alias
 export interface Order {
-  id: string;
-  customerId: string;
-  customer: Customer;
-  items: OrderItem[];
+  id: number;
+  customerId: number;
+  customer?: Customer;
+  items?: OrderItem[];
   total: number;
   status: 'received' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  deliveryAddress: Address;
-  deliveryAddressId?: string;
-  deliveryMethod: DeliveryMethod;
-  deliveryMethodId?: string;
+  deliveryAddress?: Address;
+  deliveryAddressId: number;
+  deliveryMethod?: DeliveryMethod;
+  deliveryMethodId: number;
   deliveryFee: number;
-  paymentMethod: PaymentMethod;
-  paymentMethodId?: string;
+  paymentMethod?: PaymentMethod;
+  paymentMethodId: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  createdAt: Date;
-  updatedAt: Date;
   estimatedDelivery?: Date;
   deliveredAt?: Date;
   notes?: string;
   cancelReason?: string;
-  timeline: OrderTimelineEvent[];
-  deliveryDriverId?: string;
+  timeline?: OrderTimelineEvent[];
+  deliveryDriverId?: number;
   deliveryDriver?: Delivery;
 }
 
-export interface OrderItem {
-  id: string;
-  orderId?: string;
-  productId: string;
-  product: Product;
-  quantity: number;
-  price: number;
-  variationId?: string;
-  variation?: ProductVariation;
-  createdAt?: Date;
+export interface ProdutoPedido {
+  id: number;
+  quantidade: number;
+  preco: number; // DECIMAL(10,2)
+  fk_produto_id: number;
+  fk_pedido_id: number;
 }
 
+// Legacy compatibility alias
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  product?: Product;
+  quantity: number;
+  price: number;
+  variationId?: number;
+  variation?: ProductVariation;
+}
+
+export interface AtualizacaoPedido {
+  id: number;
+  status: number; // TINYINT
+  timestamp: Date; // DATETIME
+  descricao?: string; // TEXT
+  fk_usuario_id?: number;
+  fk_pedido_id: number;
+}
+
+// Legacy compatibility alias
+export interface OrderTimelineEvent {
+  id: number;
+  orderId: number;
+  status: Order['status'];
+  timestamp: Date;
+  description?: string;
+  userId?: number;
+  userName?: string;
+}
+
+export interface AvaliacaoProduto {
+  id: number;
+  avaliacao: number; // TINYINT (1-5 rating)
+  comentario?: string; // TEXT
+  fk_produto_id: number;
+  fk_usuario_id: number;
+}
+
+// Legacy compatibility alias
+export interface Review {
+  id: number;
+  productId: number;
+  customerId: number;
+  customer?: Customer;
+  rating: number;
+  comment?: string;
+}
+
+export interface MetodoEntrega {
+  id: number;
+  descricao?: string;
+  tipo: string;
+  estimativaEntrega?: string;
+  status: number; // TINYINT
+  nome: string;
+  preco: number; // DECIMAL(10,2)
+}
+
+// Legacy compatibility alias
 export interface DeliveryMethod {
-  id: string;
+  id: number;
   name: string;
-  description: string;
+  description?: string;
   type: 'pickup' | 'delivery' | 'fixed_shipping';
   price: number;
   estimatedDays: number;
   isActive: boolean;
   regions?: DeliveryRegion[];
   schedule?: DeliverySchedule[];
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
+export interface MetodoPagamento {
+  id: number;
+  nome: string;
+  tipo: string;
+  ativo: number; // TINYINT
+}
+
+// Legacy compatibility alias
+export interface PaymentMethod {
+  id: number;
+  name: string;
+  type: 'credit_card' | 'debit_card' | 'pix' | 'bank_transfer' | 'cash';
+  isActive: boolean;
+  config?: PaymentMethodConfig;
+}
+
+// These interfaces are not part of the database schema but kept for application functionality
 export interface DeliveryRegion {
-  id: string;
-  deliveryMethodId?: string;
+  id: number;
+  deliveryMethodId?: number;
   name: string;
   zipCodeStart: string;
   zipCodeEnd: string;
@@ -157,22 +287,12 @@ export interface DeliveryRegion {
 }
 
 export interface DeliverySchedule {
-  id: string;
-  deliveryMethodId?: string;
+  id: number;
+  deliveryMethodId?: number;
   dayOfWeek: number; // 0-6, 0 = Sunday
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
   isActive: boolean;
-}
-
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  type: 'credit_card' | 'debit_card' | 'pix' | 'bank_transfer' | 'cash';
-  isActive: boolean;
-  config?: PaymentMethodConfig;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface PaymentMethodConfig {
@@ -183,8 +303,8 @@ export interface PaymentMethodConfig {
 }
 
 export interface Notification {
-  id: string;
-  userId?: string;
+  id: number;
+  userId?: number;
   type: 'info' | 'success' | 'warning' | 'error';
   title: string;
   message: string;
@@ -192,41 +312,12 @@ export interface Notification {
   createdAt: Date;
 }
 
-export interface Review {
-  id: string;
-  productId: string;
-  customerId: string;
-  customer: Customer;
-  rating: number;
-  comment?: string;
-  createdAt: Date;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-// New admin-specific types
-export interface OrderTimelineEvent {
-  id: string;
-  orderId?: string;
-  status: Order['status'];
-  timestamp: Date;
-  description: string;
-  userId?: string;
-  userName?: string;
-}
-
+// Admin-specific types - not part of database schema but needed for application functionality
 export interface NotificationRecord {
-  id: string;
+  id: number;
   type: 'order_created' | 'status_updated' | 'payment_confirmed' | 'order_delivered';
-  orderId?: string;
-  customerId: string;
+  orderId?: number;
+  customerId: number;
   customerName: string;
   title: string;
   message: string;
@@ -256,7 +347,7 @@ export interface SalesData {
 }
 
 export interface TopProduct {
-  productId: string;
+  productId: number;
   productName: string;
   quantitySold: number;
   revenue: number;
@@ -269,7 +360,7 @@ export interface PaymentMethodStats {
 }
 
 export interface LowStockProduct {
-  id: string;
+  id: number;
   name: string;
   currentStock: number;
   minimumStock: number;
@@ -299,21 +390,42 @@ export interface SortOption {
   direction: 'asc' | 'desc';
 }
 
-// Form DTOs for creating/updating entities
-export interface CustomerFormData {
-  name: string;
+// Form DTOs for creating/updating entities - aligned with database schema
+export interface UsuarioFormData {
+  nome: string;
   email: string;
-  phone?: string;
-  avatar?: string;
-  isVip?: boolean;
-  isBlocked?: boolean;
+  cargo: string;
+  numeroCelular?: string;
+  status: number;
 }
 
+// Legacy compatibility aliases for forms
+export interface CustomerFormData {
+  nome: string;
+  email: string;
+  numeroCelular?: string;
+  cargo?: string;
+}
+
+export interface ProdutoFormData {
+  sku?: string;
+  nome: string;
+  descricao?: string;
+  descricaoResumida?: string;
+  preco: number;
+  medida: string;
+  estoque: number;
+  status: number;
+  tags?: string;
+  fk_categoria_id: number;
+}
+
+// Legacy compatibility aliases
 export interface ProductFormData {
   name: string;
-  description: string;
+  description?: string;
   shortDescription?: string;
-  categoryId: string;
+  categoryId: number;
   price: number;
   unit: string;
   stock: number;
@@ -323,10 +435,28 @@ export interface ProductFormData {
   sku?: string;
 }
 
+export interface CategoriaFormData {
+  nome: string;
+  descricao?: string;
+  estaAtiva: boolean;
+}
+
 export interface CategoryFormData {
   name: string;
   description?: string;
   isActive: boolean;
+}
+
+export interface EnderecoFormData {
+  rua: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  favorito?: boolean;
+  fk_usuario_id: number;
 }
 
 export interface AddressFormData {
@@ -340,13 +470,28 @@ export interface AddressFormData {
   isDefault?: boolean;
 }
 
+export interface MetodoEntregaFormData {
+  descricao?: string;
+  tipo: string;
+  estimativaEntrega?: string;
+  status: number;
+  nome: string;
+  preco: number;
+}
+
 export interface DeliveryMethodFormData {
   name: string;
-  description: string;
+  description?: string;
   type: 'pickup' | 'delivery' | 'fixed_shipping';
   price: number;
   estimatedDays: number;
   isActive: boolean;
+}
+
+export interface MetodoPagamentoFormData {
+  nome: string;
+  tipo: string;
+  ativo: number;
 }
 
 export interface PaymentMethodFormData {
@@ -356,32 +501,56 @@ export interface PaymentMethodFormData {
   config?: PaymentMethodConfig;
 }
 
-// Database constraint types
+// Database constraint types - updated to match actual database schema
 export interface DatabaseConstraints {
-  users: {
-    maxNameLength: 255;
-    maxEmailLength: 255;
-    maxPhoneLength: 20;
-    maxAvatarLength: 500;
+  usuario: {
+    maxNomeLength: 100; // VARCHAR(100)
+    maxEmailLength: 150; // VARCHAR(150)
+    maxCargoLength: 50; // VARCHAR(50)
+    maxNumeroCelularLength: 20; // VARCHAR(20)
+    maxTotalGasto: 99999999.99; // DECIMAL(10,2)
+    maxNota: 9.9; // DECIMAL(2,1)
+    minNota: 0.0;
   };
-  products: {
-    maxNameLength: 255;
-    maxShortDescriptionLength: 500;
-    maxUnitLength: 10;
-    maxSkuLength: 100;
-    maxPrice: number;
-    minPrice: number;
+  endereco: {
+    maxRuaLength: 100; // VARCHAR(100)
+    maxNumeroLength: 10; // VARCHAR(10)
+    maxComplementoLength: 50; // VARCHAR(50)
+    maxBairroLength: 50; // VARCHAR(50)
+    maxCidadeLength: 50; // VARCHAR(50)
+    maxEstadoLength: 2; // VARCHAR(2) - Note: schema has typo "VACHAR"
+    maxCepLength: 10; // VARCHAR(10)
   };
-  categories: {
-    maxNameLength: 100;
+  produto: {
+    maxSkuLength: 30; // VARCHAR(30)
+    maxNomeLength: 100; // VARCHAR(100)
+    maxDescricaoResumidaLength: 255; // VARCHAR(255)
+    maxMedidaLength: 20; // VARCHAR(20)
+    maxTagsLength: 255; // VARCHAR(255)
+    maxPreco: 99999999.99; // DECIMAL(10,2)
+    minPreco: 0.00;
   };
-  addresses: {
-    maxStreetLength: 255;
-    maxNumberLength: 20;
-    maxComplementLength: 255;
-    maxNeighborhoodLength: 100;
-    maxCityLength: 100;
-    maxStateLength: 2;
-    maxZipCodeLength: 10;
+  categoria: {
+    maxNomeLength: 50; // VARCHAR(50)
+    maxDescricaoLength: 255; // VARCHAR(255)
+  };
+  pedido: {
+    maxTotal: 99999999.99; // DECIMAL(10,2)
+    maxSubtotal: 99999999.99; // DECIMAL(10,2)
+    maxTaxaEntrega: 99999999.99; // DECIMAL(10,2)
+  };
+  metodoEntrega: {
+    maxDescricaoLength: 255; // VARCHAR(255)
+    maxTipoLength: 30; // VARCHAR(30)
+    maxEstimativaEntregaLength: 50; // VARCHAR(50)
+    maxNomeLength: 50; // VARCHAR(50)
+    maxPreco: 99999999.99; // DECIMAL(10,2)
+  };
+  metodoPagamento: {
+    maxNomeLength: 50; // VARCHAR(50)
+    maxTipoLength: 20; // VARCHAR(20)
+  };
+  produtoPedido: {
+    maxPreco: 99999999.99; // DECIMAL(10,2)
   };
 }
