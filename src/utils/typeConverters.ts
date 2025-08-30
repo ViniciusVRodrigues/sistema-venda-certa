@@ -11,21 +11,20 @@ import type {
 export function usuarioToCustomer(usuario: Usuario, addresses: Endereco[] = [], orders: Pedido[] = []): Customer {
   return {
     ...usuario,
+    cargo: 'customer' as const,
     // Map database fields to legacy fields for compatibility
     name: usuario.nome,
-    role: 'customer' as const,
     phone: usuario.numeroCelular,
-    // Legacy fields that don't exist in database
-    avatar: undefined,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    addresses: addresses.map(enderecoToAddress),
-    orders: [], // Don't include orders to avoid circular conversion
-    isVip: usuario.nota ? usuario.nota >= 4.5 : false,
-    isBlocked: usuario.status === 0,
     totalOrders: usuario.totalPedidos,
     totalSpent: usuario.totalGasto,
-    lastOrderDate: undefined // Would need to be calculated from orders
+    // Legacy fields that don't exist in database
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    addresses: addresses,
+    orders: orders,
+    isVip: usuario.nota ? usuario.nota >= 4.5 : false,
+    isBlocked: usuario.status === 0,
+    lastOrderDate: orders.length > 0 ? orders[orders.length - 1].dataEntrega || new Date() : undefined
   };
 }
 

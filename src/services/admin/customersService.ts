@@ -127,31 +127,42 @@ export const customersService = {
   },
 
   // Get single customer by ID
-  async getCustomer(id: string | number): Promise<Customer | null> {
+  async getCustomer(id: number): Promise<Customer | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    const customerId = typeof id === 'string' ? parseInt(id) : id;
     const customer = mockCustomers.find(c => {
       const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === customerId;
+      return cId === id;
     });
     
     return customer || null;
   },
 
   // Create new customer
-  async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'addresses' | 'orders'>): Promise<Customer> {
+  async createCustomer(customerData: CustomerFormData): Promise<Customer> {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const newCustomer: Customer = {
-      ...customerData,
-      id: (mockCustomers.length + 1).toString(),
+      id: mockCustomers.length + 1,
+      nome: customerData.nome,
+      email: customerData.email,
+      cargo: 'customer',
+      numeroCelular: customerData.numeroCelular,
+      status: customerData.status || 1,
+      totalPedidos: customerData.totalPedidos || 0,
+      totalGasto: customerData.totalGasto || 0,
+      entregasFeitas: customerData.entregasFeitas || 0,
+      nota: customerData.nota,
+      name: customerData.nome, // Legacy mapping
+      phone: customerData.numeroCelular, // Legacy mapping
+      totalOrders: customerData.totalPedidos || 0,
+      totalSpent: customerData.totalGasto || 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       addresses: [],
       orders: [],
-      totalOrders: 0,
-      totalSpent: 0
+      isVip: false,
+      isBlocked: false
     };
 
     mockCustomers.push(newCustomer);
@@ -159,22 +170,33 @@ export const customersService = {
   },
 
   // Update customer
-  async updateCustomer(id: string | number, updates: Partial<Customer>): Promise<Customer | null> {
+  async updateCustomer(id: number, updates: Partial<CustomerFormData>): Promise<Customer | null> {
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const customerId = typeof id === 'string' ? parseInt(id) : id;
     const customerIndex = mockCustomers.findIndex(c => {
       const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === customerId;
+      return cId === id;
     });
 
     if (customerIndex === -1) {
       return null;
     }
 
-    const updatedCustomer = {
-      ...mockCustomers[customerIndex],
-      ...updates,
+    const customer = mockCustomers[customerIndex];
+    const updatedCustomer: Customer = {
+      ...customer,
+      nome: updates.nome || customer.nome,
+      email: updates.email || customer.email,
+      numeroCelular: updates.numeroCelular || customer.numeroCelular,
+      cargo: updates.cargo || customer.cargo,
+      status: updates.status !== undefined ? updates.status : customer.status,
+      totalPedidos: updates.totalPedidos !== undefined ? updates.totalPedidos : customer.totalPedidos,
+      totalGasto: updates.totalGasto !== undefined ? updates.totalGasto : customer.totalGasto,
+      entregasFeitas: updates.entregasFeitas !== undefined ? updates.entregasFeitas : customer.entregasFeitas,
+      nota: updates.nota !== undefined ? updates.nota : customer.nota,
+      name: updates.nome || customer.name, // Legacy mapping
+      totalOrders: updates.totalPedidos !== undefined ? updates.totalPedidos : customer.totalOrders,
+      totalSpent: updates.totalGasto !== undefined ? updates.totalGasto : customer.totalSpent,
       updatedAt: new Date()
     };
 
@@ -183,13 +205,12 @@ export const customersService = {
   },
 
   // Delete customer
-  async deleteCustomer(id: string | number): Promise<boolean> {
+  async deleteCustomer(id: number): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const customerId = typeof id === 'string' ? parseInt(id) : id;
     const customerIndex = mockCustomers.findIndex(c => {
       const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === customerId;
+      return cId === id;
     });
 
     if (customerIndex === -1) {
@@ -201,7 +222,7 @@ export const customersService = {
   },
 
   // Toggle customer VIP status
-  async toggleVipStatus(id: string | number): Promise<Customer | null> {
+  async toggleVipStatus(id: number): Promise<Customer | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const customer = await this.getCustomer(id);
@@ -209,11 +230,26 @@ export const customersService = {
       return null;
     }
 
-    return this.updateCustomer(id, { isVip: !customer.isVip });
+    // Update the customer with new VIP status
+    const customerIndex = mockCustomers.findIndex(c => {
+      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return cId === id;
+    });
+
+    if (customerIndex !== -1) {
+      mockCustomers[customerIndex] = {
+        ...customer,
+        isVip: !customer.isVip,
+        updatedAt: new Date()
+      };
+      return mockCustomers[customerIndex];
+    }
+
+    return null;
   },
 
   // Toggle customer blocked status
-  async toggleBlockedStatus(id: string | number): Promise<Customer | null> {
+  async toggleBlockedStatus(id: number): Promise<Customer | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const customer = await this.getCustomer(id);
@@ -221,7 +257,23 @@ export const customersService = {
       return null;
     }
 
-    return this.updateCustomer(id, { isBlocked: !customer.isBlocked });
+    // Update the customer with new blocked status
+    const customerIndex = mockCustomers.findIndex(c => {
+      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
+      return cId === id;
+    });
+
+    if (customerIndex !== -1) {
+      mockCustomers[customerIndex] = {
+        ...customer,
+        isBlocked: !customer.isBlocked,
+        status: !customer.isBlocked ? 0 : 1, // Update database status field
+        updatedAt: new Date()
+      };
+      return mockCustomers[customerIndex];
+    }
+
+    return null;
   },
 
   // Get customer statistics

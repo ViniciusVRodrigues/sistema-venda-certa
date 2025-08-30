@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import sequelize from './config/database';
 import routes from './routes';
 import { errorHandler, notFound } from './middleware/errorHandler';
+import { specs, swaggerUi } from './config/swagger';
 
 // Load environment variables
 dotenv.config();
@@ -34,12 +35,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // API routes
 app.use('/api', routes);
 
+// Swagger documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Sistema Venda Certa API Docs'
+}));
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'API Sistema Venda Certa',
     version: '1.0.0',
-    documentation: '/api/health',
+    documentation: '/api/docs',
+    health: '/api/health',
   });
 });
 

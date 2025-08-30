@@ -17,6 +17,16 @@ export interface Customer extends Usuario {
   cargo: 'customer';
   addresses?: Endereco[];
   orders?: Pedido[];
+  // Legacy properties mapped to database fields
+  name: string; // Maps to nome
+  phone?: string; // Maps to numeroCelular
+  totalOrders: number; // Maps to totalPedidos
+  totalSpent: number; // Maps to totalGasto
+  isVip?: boolean; // Custom property not in database
+  isBlocked?: boolean; // Custom property not in database
+  lastOrderDate?: Date; // Calculated from orders
+  createdAt?: Date; // Not in database schema
+  updatedAt?: Date; // Not in database schema
 }
 
 export interface Admin extends Usuario {
@@ -30,8 +40,10 @@ export interface Delivery extends Usuario {
   assignedOrders?: number[];
 }
 
-// Alias for backward compatibility
-export interface User extends Usuario {}
+// Alias for backward compatibility - add role property for legacy code
+export interface User extends Usuario {
+  role: string; // Maps to cargo for compatibility
+}
 export interface Entregador extends Usuario {
   cargo: 'delivery';
 }
@@ -405,7 +417,12 @@ export interface CustomerFormData {
   nome: string;
   email: string;
   numeroCelular?: string;
-  cargo?: string;
+  cargo: string;
+  status: number;
+  totalPedidos: number;
+  totalGasto: number;
+  entregasFeitas: number;
+  nota?: number;
 }
 
 export interface ProdutoFormData {

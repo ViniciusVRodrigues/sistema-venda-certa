@@ -62,7 +62,7 @@ export const CustomersList: React.FC = () => {
     setIsDrawerOpen(false);
   };
 
-  const handleToggleVip = async (customerId: string, currentVipStatus: boolean) => {
+  const handleToggleVip = async (customerId: number, currentVipStatus: boolean) => {
     try {
       await updateVipStatus(customerId, !currentVipStatus);
       // Refresh customer details if the same customer is selected
@@ -77,7 +77,7 @@ export const CustomersList: React.FC = () => {
     }
   };
 
-  const handleToggleBlocked = async (customerId: string, currentBlockedStatus: boolean) => {
+  const handleToggleBlocked = async (customerId: number, currentBlockedStatus: boolean) => {
     try {
       await updateBlockedStatus(customerId, !currentBlockedStatus);
       // Refresh customer details if the same customer is selected
@@ -489,15 +489,15 @@ export const CustomersList: React.FC = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium">
-                              {address.street}, {address.number}
-                              {address.complement && ` - ${address.complement}`}
+                              {address.rua}, {address.numero}
+                              {address.complemento && ` - ${address.complemento}`}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {address.neighborhood}, {address.city} - {address.state}
+                              {address.bairro}, {address.cidade} - {address.estado}
                             </p>
-                            <p className="text-sm text-gray-600">CEP: {address.zipCode}</p>
+                            <p className="text-sm text-gray-600">CEP: {address.cep}</p>
                           </div>
-                          {address.isDefault && (
+                          {address.favorito && (
                             <Badge variant="info">Padrão</Badge>
                           )}
                         </div>
