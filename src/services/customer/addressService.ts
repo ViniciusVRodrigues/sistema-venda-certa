@@ -1,73 +1,67 @@
-import type { Address } from '../../types';
+import type { Endereco } from '../../types';
+import { mockEnderecos } from '../mock/databaseMockData';
 
-// Mock addresses data
-const mockAddresses: Address[] = [
-  {
-    id: '1',
-    street: 'Rua das Flores',
-    number: '123',
-    complement: 'Apto 45',
-    neighborhood: 'Centro',
-    city: 'São Paulo',
-    state: 'SP',
-    zipCode: '01310-100',
-    isDefault: true
-  },
-  {
-    id: '2',
-    street: 'Av. Paulista',
-    number: '1000',
-    neighborhood: 'Bela Vista',
-    city: 'São Paulo',
-    state: 'SP',
-    zipCode: '01310-200',
-    isDefault: false
-  }
-];
+// Use database schema data
+const mockAddresses: Endereco[] = [...mockEnderecos];
 
 export interface CreateAddressData {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  isDefault?: boolean;
+  rua: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  favorito?: boolean;
+  fk_usuario_id: number;
 }
 
 export interface UpdateAddressData extends Partial<CreateAddressData> {
-  id: string;
+  id: number;
 }
 
 export const addressService = {
   // Get customer addresses
-  async getAddresses(): Promise<Address[]> {
+  async getAddresses(customerId?: number): Promise<Endereco[]> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
+    
+    if (customerId) {
+      return mockAddresses.filter(address => address.fk_usuario_id === customerId);
+    }
+    
     return [...mockAddresses];
   },
 
-  // Get address by ID
-  async getAddressById(id: string): Promise<Address | null> {
+  // Get single address by ID
+  async getAddressById(id: number): Promise<Endereco | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
     return mockAddresses.find(address => address.id === id) || null;
   },
 
   // Create new address
-  async createAddress(data: CreateAddressData): Promise<Address> {
+  async createAddress(data: CreateAddressData): Promise<Endereco> {
     await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const newAddress: Address = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...data,
-      isDefault: data.isDefault || false
+
+    const newAddress: Endereco = {
+      id: Math.max(...mockAddresses.map(a => a.id)) + 1,
+      rua: data.rua,
+      numero: data.numero,
+      complemento: data.complemento,
+      bairro: data.bairro,
+      cidade: data.cidade,
+      estado: data.estado,
+      cep: data.cep,
+      favorito: data.favorito || false,
+      fk_usuario_id: data.fk_usuario_id
     };
 
-    // If this is set as default, unset others
-    if (newAddress.isDefault) {
+    // If this is set as favorite, remove favorite from other addresses of the same user
+    if (newAddress.favorito) {
       mockAddresses.forEach(address => {
-        address.isDefault = false;
+        if (address.fk_usuario_id === data.fk_usuario_id) {
+          address.favorito = false;
+        }
       });
     }
 
@@ -75,23 +69,28 @@ export const addressService = {
     return newAddress;
   },
 
-  // Update existing address
-  async updateAddress(data: UpdateAddressData): Promise<Address> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
+  // Update address
+  async updateAddress(data: UpdateAddressData): Promise<Endereco | null> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+
     const index = mockAddresses.findIndex(address => address.id === data.id);
     if (index === -1) {
       throw new Error('Endereço não encontrado');
     }
 
-    const { id, ...updateData } = data;
-    const updatedAddress = { ...mockAddresses[index], ...updateData };
+    const currentAddress = mockAddresses[index];
+    const updatedAddress: Endereco = {
+      ...currentAddress,
+      ...data,
+      id: currentAddress.id, // Prevent ID changes
+      fk_usuario_id: currentAddress.fk_usuario_id // Prevent user ID changes
+    };
 
-    // If this is set as default, unset others
-    if (updatedAddress.isDefault) {
+    // If this is set as favorite, remove favorite from other addresses of the same user
+    if (updatedAddress.favorito) {
       mockAddresses.forEach(address => {
-        if (address.id !== id) {
-          address.isDefault = false;
+        if (address.fk_usuario_id === updatedAddress.fk_usuario_id && address.id !== updatedAddress.id) {
+          address.favorito = false;
         }
       });
     }
@@ -101,74 +100,118 @@ export const addressService = {
   },
 
   // Delete address
-  async deleteAddress(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+  async deleteAddress(id: number): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+
     const index = mockAddresses.findIndex(address => address.id === id);
     if (index === -1) {
-      throw new Error('Endereço não encontrado');
+      return false;
     }
 
-    const wasDefault = mockAddresses[index].isDefault;
+    const wasDefault = mockAddresses[index].favorito;
+    const userId = mockAddresses[index].fk_usuario_id;
     mockAddresses.splice(index, 1);
 
-    // If deleted address was default, set first remaining as default
-    if (wasDefault && mockAddresses.length > 0) {
-      mockAddresses[0].isDefault = true;
+    // If we deleted the favorite address, make the first remaining address favorite
+    if (wasDefault) {
+      const userAddresses = mockAddresses.filter(addr => addr.fk_usuario_id === userId);
+      if (userAddresses.length > 0) {
+        userAddresses[0].favorito = true;
+      }
     }
+
+    return true;
   },
 
-  // Set address as default
-  async setDefaultAddress(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
+  // Set address as favorite
+  async setAsFavorite(id: number): Promise<Endereco | null> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     const address = mockAddresses.find(addr => addr.id === id);
     if (!address) {
-      throw new Error('Endereço não encontrado');
+      return null;
     }
 
-    // Unset all as default
+    // Remove favorite from all other addresses of the same user
     mockAddresses.forEach(addr => {
-      addr.isDefault = false;
+      if (addr.fk_usuario_id === address.fk_usuario_id) {
+        addr.favorito = false;
+      }
     });
 
-    // Set target as default
-    address.isDefault = true;
+    // Set this address as favorite
+    address.favorito = true;
+
+    return address;
   },
 
   // Validate address data
-  validateAddress(data: Partial<CreateAddressData>): { isValid: boolean; errors: string[] } {
+  validateAddressData(data: Partial<CreateAddressData>): string[] {
     const errors: string[] = [];
 
-    if (!data.street?.trim()) {
+    if (!data.rua?.trim()) {
       errors.push('Rua é obrigatória');
     }
 
-    if (!data.number?.trim()) {
+    if (!data.numero?.trim()) {
       errors.push('Número é obrigatório');
     }
 
-    if (!data.neighborhood?.trim()) {
+    if (!data.bairro?.trim()) {
       errors.push('Bairro é obrigatório');
     }
 
-    if (!data.city?.trim()) {
+    if (!data.cidade?.trim()) {
       errors.push('Cidade é obrigatória');
     }
 
-    if (!data.state?.trim()) {
+    if (!data.estado?.trim()) {
       errors.push('Estado é obrigatório');
     }
 
-    if (!data.zipCode?.trim()) {
+    if (!data.cep?.trim()) {
       errors.push('CEP é obrigatório');
-    } else if (!/^\d{5}-?\d{3}$/.test(data.zipCode.replace(/\D/g, ''))) {
-      errors.push('CEP deve ter formato válido (12345-678)');
+    } else if (!/^\d{5}-?\d{3}$/.test(data.cep)) {
+      errors.push('CEP deve ter formato 00000-000');
     }
 
-    return {
-      isValid: errors.length === 0,
-      errors
+    if (data.estado && data.estado.length !== 2) {
+      errors.push('Estado deve ter 2 caracteres');
+    }
+
+    return errors;
+  },
+
+  // Validate ZIP code format
+  async validateZipCode(zipCode: string): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Basic validation - in real app would call API like ViaCEP
+    const cleanZip = zipCode.replace(/\D/g, '');
+    return cleanZip.length === 8;
+  },
+
+  // Get address by ZIP code (mock implementation)
+  async getAddressByZipCode(zipCode: string): Promise<Partial<Endereco> | null> {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Mock data - in real app would call ViaCEP API
+    const mockZipData: Record<string, Partial<Endereco>> = {
+      '01310100': {
+        rua: 'Av. Paulista',
+        bairro: 'Bela Vista',
+        cidade: 'São Paulo',
+        estado: 'SP'
+      },
+      '01234567': {
+        rua: 'Rua das Flores',
+        bairro: 'Centro',
+        cidade: 'São Paulo',
+        estado: 'SP'
+      }
     };
+
+    const cleanZip = zipCode.replace(/\D/g, '');
+    return mockZipData[cleanZip] || null;
   }
 };

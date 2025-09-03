@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { catalogService } from '../../services/customer/catalogService';
-import type { CatalogFilters, CatalogSort, CatalogResponse } from '../../services/customer/catalogService';
-import type { Product, Category } from '../../types';
+import type { CatalogFilters, CatalogSortOption, CatalogResponse } from '../../services/customer/catalogService';
+import type { Produto, Categoria } from '../../types';
 
 export const useCatalog = (
   initialFilters: CatalogFilters = {},
-  initialSort: CatalogSort = { field: 'relevance', direction: 'desc' },
+  initialSort: CatalogSortOption = { field: 'nome', direction: 'asc' },
   initialPageSize: number = 12
 ) => {
   const [data, setData] = useState<CatalogResponse | null>(null);
@@ -13,7 +13,7 @@ export const useCatalog = (
   const [error, setError] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<CatalogFilters>(initialFilters);
-  const [sort, setSort] = useState<CatalogSort>(initialSort);
+  const [sort, setSort] = useState<CatalogSortOption>(initialSort);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
 
@@ -24,8 +24,8 @@ export const useCatalog = (
       
       const response = await catalogService.getProducts(
         filters,
-        sort,
-        { page: currentPage, pageSize }
+        { page: currentPage, pageSize },
+        sort
       );
       
       setData(response);
@@ -46,7 +46,7 @@ export const useCatalog = (
     if (currentPage !== 1) {
       setCurrentPage(1);
     }
-  }, [filters, sort]);
+  }, [filters, sort, currentPage]);
 
   const updateFilters = useCallback((newFilters: Partial<CatalogFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -56,7 +56,7 @@ export const useCatalog = (
     setFilters({});
   }, []);
 
-  const updateSort = useCallback((newSort: CatalogSort) => {
+  const updateSort = useCallback((newSort: CatalogSortOption) => {
     setSort(newSort);
   }, []);
 
@@ -116,8 +116,13 @@ export const useSearchSuggestions = (query: string, debounceMs: number = 300) =>
     
     const timer = setTimeout(async () => {
       try {
-        const results = await catalogService.getSearchSuggestions(query);
-        setSuggestions(results);
+        // Como o catalogService não tem getSearchSuggestions, vamos criar uma implementação simples
+        const results = await catalogService.getProducts(
+          { search: query },
+          { page: 1, pageSize: 5 }
+        );
+        const productSuggestions = results.products.map(product => product.nome);
+        setSuggestions(productSuggestions);
       } catch (err) {
         console.error('Error fetching suggestions:', err);
         setSuggestions([]);
@@ -133,7 +138,7 @@ export const useSearchSuggestions = (query: string, debounceMs: number = 300) =>
 };
 
 export const useFeaturedProducts = (limit: number = 8) => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -158,7 +163,7 @@ export const useFeaturedProducts = (limit: number = 8) => {
 };
 
 export const useCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Button, Badge, Card } from '../../components/ui';
 import { useCart } from '../../context/CartContext';
 import { useProductDetails } from '../../hooks/customer/useProduct';
-import type { ProductVariation } from '../../types';
+import type { Produto } from '../../types';
 
 // Rating Stars Component
 interface RatingStarsProps {
@@ -157,7 +157,6 @@ export const ProductDetailPage: React.FC = () => {
   const { product, reviews, reviewStats, relatedProducts, loading, error } = useProductDetails(id || null);
   
   // State
-  const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'specifications' | 'reviews'>('description');
@@ -193,12 +192,31 @@ export const ProductDetailPage: React.FC = () => {
   }
 
   // Calculate current price and stock
-  const currentPrice = selectedVariation?.price || product.price;
-  const currentStock = selectedVariation?.stock || product.stock;
-  const isAvailable = product.status === 'active' && currentStock > 0;
+  const currentPrice = product.preco;
+  const currentStock = product.estoque;
+  const isAvailable = product.status === 1 && currentStock > 0;
+
+  // Create mock image URL if no image is available
+  const mockImageUrl = 'https://images.unsplash.com/photo-1546470427-e26264be0b37?w=600';
+  const productImages = [mockImageUrl]; // Since schema has only one image field
 
   const handleAddToCart = () => {
-    addItem(product, quantity, selectedVariation || undefined);
+    // Convert Produto to Product format for cart compatibility
+    const productForCart = {
+      id: product.id,
+      name: product.nome,
+      description: product.descricao || '',
+      shortDescription: product.descricaoResumida || '',
+      categoryId: product.fk_categoria_id,
+      price: product.preco,
+      unit: product.medida,
+      stock: product.estoque,
+      status: product.status === 1 ? 'active' as const : 'inactive' as const,
+      images: productImages,
+      tags: product.tags ? product.tags.split(',') : [],
+      sku: product.sku
+    };
+    addItem(productForCart, quantity);
   };
 
   const handleImageKeyDown = (e: React.KeyboardEvent, direction: 'prev' | 'next') => {
@@ -206,7 +224,7 @@ export const ProductDetailPage: React.FC = () => {
       e.preventDefault();
       if (direction === 'prev' && activeImageIndex > 0) {
         setActiveImageIndex(activeImageIndex - 1);
-      } else if (direction === 'next' && activeImageIndex < product.images.length - 1) {
+      } else if (direction === 'next' && activeImageIndex < productImages.length - 1) {
         setActiveImageIndex(activeImageIndex + 1);
       }
     }
@@ -221,7 +239,7 @@ export const ProductDetailPage: React.FC = () => {
           <span>/</span>
           <Link to="/" className="hover:text-green-600">Produtos</Link>
           <span>/</span>
-          <span className="text-green-700 font-medium">{product.name}</span>
+          <span className="text-green-700 font-medium">{product.nome}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -230,16 +248,16 @@ export const ProductDetailPage: React.FC = () => {
             {/* Main Image */}
             <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
               <img
-                src={product.images[activeImageIndex]}
-                alt={product.name}
+                src={productImages[activeImageIndex]}
+                alt={product.nome}
                 className="w-full h-full object-cover"
               />
             </div>
 
             {/* Thumbnail Images */}
-            {product.images.length > 1 && (
+            {productImages.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto">
-                {product.images.map((image, index) => (
+                {productImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveImageIndex(index)}
@@ -252,7 +270,7 @@ export const ProductDetailPage: React.FC = () => {
                   >
                     <img
                       src={image}
-                      alt={`${product.name} - Imagem ${index + 1}`}
+                      alt={`${product.nome} - Imagem ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -265,7 +283,7 @@ export const ProductDetailPage: React.FC = () => {
           <div className="space-y-6">
             {/* Header */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.nome}</h1>
               
               <div className="flex items-center space-x-4 mb-4">
                 {reviewStats.totalReviews > 0 && (
@@ -278,61 +296,25 @@ export const ProductDetailPage: React.FC = () => {
                 )}
                 
                 <Badge
-                  variant={product.status === 'active' && currentStock > 0 ? 'success' : 'danger'}
+                  variant={isAvailable ? 'success' : 'danger'}
                   size="sm"
                 >
-                  {product.status === 'active' && currentStock > 0 
+                  {isAvailable 
                     ? `${currentStock} em estoque` 
                     : 'Sem estoque'
                   }
                 </Badge>
               </div>
 
-              <p className="text-gray-700 text-lg leading-relaxed">{product.description}</p>
+              <p className="text-gray-700 text-lg leading-relaxed">{product.descricao}</p>
             </div>
-
-            {/* Variations */}
-            {product.variations && product.variations.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Opções disponíveis:</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {product.variations.map((variation) => (
-                    <button
-                      key={variation.id}
-                      onClick={() => setSelectedVariation(variation)}
-                      className={`p-3 border rounded-lg text-left transition-colors ${
-                        selectedVariation?.id === variation.id
-                          ? 'border-green-500 bg-green-50 text-green-900'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <div className="font-medium">{variation.name}</div>
-                      <div className="text-sm text-gray-600">
-                        R$ {variation.price.toFixed(2)}
-                      </div>
-                      {variation.stock <= 5 && variation.stock > 0 && (
-                        <div className="text-xs text-orange-600 mt-1">
-                          Apenas {variation.stock} disponível
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Price */}
             <div className="border-t border-gray-200 pt-6">
               <div className="text-3xl font-bold text-green-700 mb-2">
                 R$ {currentPrice.toFixed(2)}
-                <span className="text-lg text-gray-600 font-normal">/{product.unit}</span>
+                <span className="text-lg text-gray-600 font-normal">/{product.medida}</span>
               </div>
-              
-              {selectedVariation && selectedVariation.price !== product.price && (
-                <div className="text-sm text-gray-500">
-                  Preço base: R$ {product.price.toFixed(2)}
-                </div>
-              )}
             </div>
 
             {/* Add to Cart */}
@@ -363,16 +345,16 @@ export const ProductDetailPage: React.FC = () => {
             </div>
 
             {/* Product Tags */}
-            {product.tags.length > 0 && (
+            {product.tags && (
               <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Tags:</h3>
                 <div className="flex flex-wrap gap-2">
-                  {product.tags.map(tag => (
+                  {product.tags.split(',').map((tag, index) => (
                     <span
-                      key={tag}
+                      key={index}
                       className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full"
                     >
-                      {tag}
+                      {tag.trim()}
                     </span>
                   ))}
                 </div>
@@ -411,7 +393,7 @@ export const ProductDetailPage: React.FC = () => {
             {activeTab === 'description' && (
               <div className="prose max-w-none">
                 <p className="text-gray-700 leading-relaxed">
-                  {product.description}
+                  {product.descricao}
                 </p>
               </div>
             )}
@@ -426,16 +408,16 @@ export const ProductDetailPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="font-medium text-gray-700">Categoria:</span>
-                    <span className="text-gray-600">{product.category.name}</span>
+                    <span className="text-gray-600">ID: {product.fk_categoria_id}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="font-medium text-gray-700">Unidade:</span>
-                    <span className="text-gray-600">{product.unit}</span>
+                    <span className="text-gray-600">{product.medida}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="font-medium text-gray-700">Status:</span>
                     <span className="text-gray-600">
-                      {product.status === 'active' ? 'Ativo' : 'Inativo'}
+                      {product.status === 1 ? 'Ativo' : 'Inativo'}
                     </span>
                   </div>
                 </div>
@@ -467,15 +449,15 @@ export const ProductDetailPage: React.FC = () => {
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="font-medium text-gray-900">
-                                  {review.customer.name}
+                                  {review.usuario?.nome || 'Usuário Anônimo'}
                                 </span>
-                                <RatingStars rating={review.rating} size="sm" />
+                                <RatingStars rating={review.avaliacao} size="sm" />
                               </div>
-                              {review.comment && (
-                                <p className="text-gray-700">{review.comment}</p>
+                              {review.comentario && (
+                                <p className="text-gray-700">{review.comentario}</p>
                               )}
                               <div className="text-sm text-gray-500 mt-2">
-                                {new Date(review.createdAt).toLocaleDateString('pt-BR')}
+                                Data da avaliação
                               </div>
                             </div>
                           </div>
@@ -513,22 +495,22 @@ export const ProductDetailPage: React.FC = () => {
                   <Link to={`/product/${relatedProduct.id}`}>
                     <div className="aspect-square bg-gray-100">
                       <img
-                        src={relatedProduct.images[0]}
-                        alt={relatedProduct.name}
+                        src={mockImageUrl}
+                        alt={relatedProduct.nome}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium text-gray-900 mb-1">
-                        {relatedProduct.name}
+                        {relatedProduct.nome}
                       </h3>
                       <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                        {relatedProduct.shortDescription || relatedProduct.description}
+                        {relatedProduct.descricaoResumida || relatedProduct.descricao}
                       </p>
                       <div className="text-lg font-bold text-green-700">
-                        R$ {relatedProduct.price.toFixed(2)}
+                        R$ {relatedProduct.preco.toFixed(2)}
                         <span className="text-sm text-green-500 font-normal">
-                          /{relatedProduct.unit}
+                          /{relatedProduct.medida}
                         </span>
                       </div>
                     </div>

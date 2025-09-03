@@ -1,27 +1,16 @@
-import type { Customer, Order, FilterOptions, PaginationData, SortOption } from '../../types';
+import type { Usuario, Endereco, Pedido, FilterOptions, PaginationData, SortOption } from '../../types';
 import { mockUsuarios, mockEnderecos, mockPedidos } from '../mock/databaseMockData';
-import { usuarioToCustomer, pedidoToOrder } from '../../utils/typeConverters';
 
-// Convert database mock data to legacy format for backward compatibility
-function getCustomersFromDatabase(): Customer[] {
-  return mockUsuarios
-    .filter(usuario => usuario.cargo === 'customer')
-    .map(usuario => {
-      // Get addresses for this user
-      const addresses = mockEnderecos.filter(endereco => endereco.fk_usuario_id === usuario.id);
-      
-      // Get orders for this user
-      const orders = mockPedidos.filter(pedido => pedido.fk_usuario_id === usuario.id);
-      
-      return usuarioToCustomer(usuario, addresses, orders);
-    });
+// Get customers directly from database schema
+function getCustomersFromDatabase(): Usuario[] {
+  return mockUsuarios.filter(usuario => usuario.cargo === 'customer');
 }
 
-// Use the converted data
-const mockCustomers: Customer[] = getCustomersFromDatabase();
+// Use the database schema data
+const mockCustomers: Usuario[] = getCustomersFromDatabase();
 
 interface CustomersResponse {
-  customers: Customer[];
+  customers: Usuario[];
   pagination: PaginationData;
 }
 
@@ -30,77 +19,71 @@ export const customersService = {
   async getCustomers(
     filters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' } = {},
     pagination: { page: number; pageSize: number } = { page: 1, pageSize: 10 },
-    sort: SortOption = { field: 'totalSpent', direction: 'desc' }
+    sort: SortOption = { field: 'totalGasto', direction: 'desc' }
   ): Promise<CustomersResponse> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     let filteredCustomers = [...mockCustomers];
 
-    // Apply search filter (name, email, phone)
+    // Apply search filter (nome, email, numeroCelular)
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filteredCustomers = filteredCustomers.filter(customer =>
-        customer.name.toLowerCase().includes(searchLower) ||
+        customer.nome.toLowerCase().includes(searchLower) ||
         customer.email.toLowerCase().includes(searchLower) ||
-        customer.phone?.toLowerCase().includes(searchLower)
+        customer.numeroCelular?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Apply VIP filter
+    // Apply VIP filter (based on nota >= 4.5)
     if (filters.vipOnly) {
-      filteredCustomers = filteredCustomers.filter(customer => customer.isVip);
+      filteredCustomers = filteredCustomers.filter(customer => customer.nota && customer.nota >= 4.5);
     }
 
     // Apply status filter
     if (filters.status) {
       if (filters.status === 'active') {
-        filteredCustomers = filteredCustomers.filter(customer => !customer.isBlocked);
+        filteredCustomers = filteredCustomers.filter(customer => customer.status === 1);
       } else if (filters.status === 'blocked') {
-        filteredCustomers = filteredCustomers.filter(customer => customer.isBlocked);
+        filteredCustomers = filteredCustomers.filter(customer => customer.status === 0);
       }
     }
 
-    // Apply date range filter (registration date)
-    if (filters.dateRange) {
-      filteredCustomers = filteredCustomers.filter(customer =>
-        customer.createdAt >= filters.dateRange!.start &&
-        customer.createdAt <= filters.dateRange!.end
-      );
-    }
+    // Note: dateRange filter cannot be implemented as createdAt doesn't exist in database schema
+    // This would need to be added to the database schema if required
 
     // Apply sorting
     filteredCustomers.sort((a, b) => {
       const { field, direction } = sort;
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
 
       switch (field) {
+        case 'nome':
         case 'name':
-          aValue = a.name;
-          bValue = b.name;
+          aValue = a.nome;
+          bValue = b.nome;
           break;
         case 'email':
           aValue = a.email;
           bValue = b.email;
           break;
+        case 'totalPedidos':
         case 'totalOrders':
-          aValue = a.totalOrders;
-          bValue = b.totalOrders;
+          aValue = a.totalPedidos;
+          bValue = b.totalPedidos;
           break;
+        case 'totalGasto':
         case 'totalSpent':
-          aValue = a.totalSpent;
-          bValue = b.totalSpent;
+          aValue = a.totalGasto;
+          bValue = b.totalGasto;
           break;
-        case 'lastOrderDate':
-          aValue = a.lastOrderDate?.getTime() || 0;
-          bValue = b.lastOrderDate?.getTime() || 0;
-          break;
-        case 'createdAt':
-          aValue = a.createdAt.getTime();
-          bValue = b.createdAt.getTime();
+        case 'nota':
+          aValue = a.nota || 0;
+          bValue = b.nota || 0;
           break;
         default:
-          aValue = a.name;
-          bValue = b.name;
+          aValue = a.nome;
+          bValue = b.nome;
       }
 
       if (direction === 'asc') {
@@ -127,42 +110,28 @@ export const customersService = {
   },
 
   // Get single customer by ID
-  async getCustomer(id: number): Promise<Customer | null> {
+  async getCustomer(id: number): Promise<Usuario | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    const customer = mockCustomers.find(c => {
-      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === id;
-    });
-    
+    const customer = mockCustomers.find(c => c.id === id);
     return customer || null;
   },
 
   // Create new customer
-  async createCustomer(customerData: CustomerFormData): Promise<Customer> {
+  async createCustomer(customerData: Partial<Usuario>): Promise<Usuario> {
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const newCustomer: Customer = {
-      id: mockCustomers.length + 1,
-      nome: customerData.nome,
-      email: customerData.email,
+    const newCustomer: Usuario = {
+      id: Math.max(...mockCustomers.map(c => c.id)) + 1,
+      nome: customerData.nome || '',
+      email: customerData.email || '',
       cargo: 'customer',
       numeroCelular: customerData.numeroCelular,
-      status: customerData.status || 1,
+      status: customerData.status !== undefined ? customerData.status : 1,
       totalPedidos: customerData.totalPedidos || 0,
       totalGasto: customerData.totalGasto || 0,
-      entregasFeitas: customerData.entregasFeitas || 0,
-      nota: customerData.nota,
-      name: customerData.nome, // Legacy mapping
-      phone: customerData.numeroCelular, // Legacy mapping
-      totalOrders: customerData.totalPedidos || 0,
-      totalSpent: customerData.totalGasto || 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      addresses: [],
-      orders: [],
-      isVip: false,
-      isBlocked: false
+      entregasFeitas: 0, // Customers don't make deliveries
+      nota: customerData.nota
     };
 
     mockCustomers.push(newCustomer);
@@ -170,34 +139,21 @@ export const customersService = {
   },
 
   // Update customer
-  async updateCustomer(id: number, updates: Partial<CustomerFormData>): Promise<Customer | null> {
+  async updateCustomer(id: number, updates: Partial<Usuario>): Promise<Usuario | null> {
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const customerIndex = mockCustomers.findIndex(c => {
-      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === id;
-    });
+    const customerIndex = mockCustomers.findIndex(c => c.id === id);
 
     if (customerIndex === -1) {
       return null;
     }
 
     const customer = mockCustomers[customerIndex];
-    const updatedCustomer: Customer = {
+    const updatedCustomer: Usuario = {
       ...customer,
-      nome: updates.nome || customer.nome,
-      email: updates.email || customer.email,
-      numeroCelular: updates.numeroCelular || customer.numeroCelular,
-      cargo: updates.cargo || customer.cargo,
-      status: updates.status !== undefined ? updates.status : customer.status,
-      totalPedidos: updates.totalPedidos !== undefined ? updates.totalPedidos : customer.totalPedidos,
-      totalGasto: updates.totalGasto !== undefined ? updates.totalGasto : customer.totalGasto,
-      entregasFeitas: updates.entregasFeitas !== undefined ? updates.entregasFeitas : customer.entregasFeitas,
-      nota: updates.nota !== undefined ? updates.nota : customer.nota,
-      name: updates.nome || customer.name, // Legacy mapping
-      totalOrders: updates.totalPedidos !== undefined ? updates.totalPedidos : customer.totalOrders,
-      totalSpent: updates.totalGasto !== undefined ? updates.totalGasto : customer.totalSpent,
-      updatedAt: new Date()
+      ...updates,
+      id: customer.id, // Prevent ID changes
+      cargo: 'customer' // Ensure cargo remains customer
     };
 
     mockCustomers[customerIndex] = updatedCustomer;
@@ -208,10 +164,7 @@ export const customersService = {
   async deleteCustomer(id: number): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const customerIndex = mockCustomers.findIndex(c => {
-      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === id;
-    });
+    const customerIndex = mockCustomers.findIndex(c => c.id === id);
 
     if (customerIndex === -1) {
       return false;
@@ -221,8 +174,8 @@ export const customersService = {
     return true;
   },
 
-  // Toggle customer VIP status
-  async toggleVipStatus(id: number): Promise<Customer | null> {
+  // Toggle customer VIP status (based on nota)
+  async toggleVipStatus(id: number): Promise<Usuario | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const customer = await this.getCustomer(id);
@@ -230,26 +183,15 @@ export const customersService = {
       return null;
     }
 
-    // Update the customer with new VIP status
-    const customerIndex = mockCustomers.findIndex(c => {
-      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === id;
-    });
+    // VIP logic: if nota >= 4.5 set to 3.0, if nota < 4.5 set to 5.0
+    const isCurrentlyVip = customer.nota && customer.nota >= 4.5;
+    const newNota = isCurrentlyVip ? 3.0 : 5.0;
 
-    if (customerIndex !== -1) {
-      mockCustomers[customerIndex] = {
-        ...customer,
-        isVip: !customer.isVip,
-        updatedAt: new Date()
-      };
-      return mockCustomers[customerIndex];
-    }
-
-    return null;
+    return this.updateCustomer(id, { nota: newNota });
   },
 
   // Toggle customer blocked status
-  async toggleBlockedStatus(id: number): Promise<Customer | null> {
+  async toggleBlockedStatus(id: number): Promise<Usuario | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const customer = await this.getCustomer(id);
@@ -257,23 +199,8 @@ export const customersService = {
       return null;
     }
 
-    // Update the customer with new blocked status
-    const customerIndex = mockCustomers.findIndex(c => {
-      const cId = typeof c.id === 'string' ? parseInt(c.id) : c.id;
-      return cId === id;
-    });
-
-    if (customerIndex !== -1) {
-      mockCustomers[customerIndex] = {
-        ...customer,
-        isBlocked: !customer.isBlocked,
-        status: !customer.isBlocked ? 0 : 1, // Update database status field
-        updatedAt: new Date()
-      };
-      return mockCustomers[customerIndex];
-    }
-
-    return null;
+    const newStatus = customer.status === 1 ? 0 : 1;
+    return this.updateCustomer(id, { status: newStatus });
   },
 
   // Get customer statistics
@@ -283,21 +210,19 @@ export const customersService = {
     blocked: number;
     vip: number;
     newThisMonth: number;
+    averageTicket: number;
     totalRevenue: number;
   }> {
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     const stats = mockCustomers.reduce(
       (acc, customer) => {
         acc.total++;
-        if (!customer.isBlocked) acc.active++;
-        if (customer.isBlocked) acc.blocked++;
-        if (customer.isVip) acc.vip++;
-        if (customer.createdAt >= startOfMonth) acc.newThisMonth++;
-        acc.totalRevenue += customer.totalSpent;
+        if (customer.status === 1) acc.active++;
+        if (customer.status === 0) acc.blocked++;
+        if (customer.nota && customer.nota >= 4.5) acc.vip++;
+        // newThisMonth can't be calculated without createdAt field in database schema
+        acc.totalRevenue += customer.totalGasto;
         return acc;
       },
       {
@@ -310,16 +235,29 @@ export const customersService = {
       }
     );
 
-    return stats;
+    // Calculate average ticket
+    const totalOrders = mockCustomers.reduce((sum, customer) => sum + customer.totalPedidos, 0);
+    const averageTicket = totalOrders > 0 ? stats.totalRevenue / totalOrders : 0;
+
+    return {
+      ...stats,
+      averageTicket
+    };
   },
 
   // Get customer orders
-  async getCustomerOrders(customerId: string | number): Promise<Order[]> {
+  async getCustomerOrders(customerId: number): Promise<Pedido[]> {
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // This would normally fetch from orders service
-    // For now, return the orders already in the customer object
-    const customer = await this.getCustomer(customerId);
-    return customer?.orders || [];
+    const orders = mockPedidos.filter(pedido => pedido.fk_usuario_id === customerId);
+    return orders;
+  },
+
+  // Get customer addresses
+  async getCustomerAddresses(customerId: number): Promise<Endereco[]> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const addresses = mockEnderecos.filter(endereco => endereco.fk_usuario_id === customerId);
+    return addresses;
   }
 };

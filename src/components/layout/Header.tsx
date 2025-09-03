@@ -122,7 +122,7 @@ export const Header: React.FC = () => {
                     </span>
                   )}
                 </Link>
-                {user?.role === 'customer' && (
+                {user?.cargo === 'customer' && (
                   <Link
                     to="/customer/menu"
                     className="p-2 text-gray-400 hover:text-gray-500"
@@ -139,23 +139,23 @@ export const Header: React.FC = () => {
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-gray-700">
-                  Olá, {user?.name}
+                  Olá, {user?.nome}
                 </span>
-                {user?.role === 'admin' && !isAdminArea && (
+                {user?.cargo === 'admin' && !isAdminArea && (
                   <Link to="/admin">
                     <Button variant="outline" size="sm">
                       Admin
                     </Button>
                   </Link>
                 )}
-                {user?.role === 'delivery' && !isDeliveryArea && (
+                {user?.cargo === 'delivery' && !isDeliveryArea && (
                   <Link to="/delivery">
                     <Button variant="outline" size="sm">
                       Entregas
                     </Button>
                   </Link>
                 )}
-                {user?.role === 'customer' && (isAdminArea || isDeliveryArea) && (
+                {user?.cargo === 'customer' && (isAdminArea || isDeliveryArea) && (
                   <Link to="/">
                     <Button variant="outline" size="sm">
                       Loja

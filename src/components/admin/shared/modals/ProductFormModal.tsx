@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, Select, Textarea } from '../../../ui';
 import { useCategories } from '../../../../hooks/useProducts';
-import type { Product, Category } from '../../../../types';
+import type { Produto, Categoria } from '../../../../types';
 
 interface ProductFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (productData: ProductFormData) => Promise<void>;
-  product?: Product | null;
+  product?: Produto | null;
   loading?: boolean;
 }
 
 export interface ProductFormData {
-  name: string;
-  description: string;
-  shortDescription: string;
-  category: Category;
-  price: number;
-  unit: string;
-  stock: number;
-  status: 'active' | 'inactive' | 'out_of_stock';
+  nome: string;
+  descricao: string;
+  descricaoResumida: string;
+  categoria: Categoria;
+  preco: number;
+  medida: string;
+  estoque: number;
+  status: number; // 0 = inactive, 1 = active
   sku: string;
-  tags: string[];
-  images: string[];
+  tags: string;
+  imagem?: string; // MEDIUMBLOB in schema
 }
 
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({

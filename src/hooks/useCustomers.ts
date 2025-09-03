@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Customer, CustomerFormData, FilterOptions, PaginationData, SortOption } from '../types';
+import type { Usuario, FilterOptions, PaginationData, SortOption } from '../types';
 import { customersService } from '../services/admin/customersService';
 
 interface UseCustomersOptions {
@@ -10,7 +10,7 @@ interface UseCustomersOptions {
 }
 
 interface UseCustomersResult {
-  customers: Customer[];
+  customers: Usuario[];
   pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
@@ -24,10 +24,10 @@ interface UseCustomersResult {
   setPage: (page: number) => void;
   
   // Customer operations
-  updateVipStatus: (customerId: number, isVip: boolean) => Promise<Customer>;
-  updateBlockedStatus: (customerId: number, isBlocked: boolean) => Promise<Customer>;
-  createCustomer: (customer: CustomerFormData) => Promise<Customer>;
-  updateCustomer: (id: number, customer: Partial<CustomerFormData>) => Promise<Customer>;
+  updateVipStatus: (customerId: number, isVip: boolean) => Promise<Usuario>;
+  updateBlockedStatus: (customerId: number, isBlocked: boolean) => Promise<Usuario>;
+  createCustomer: (customer: Omit<Usuario, 'id'>) => Promise<Usuario>;
+  updateCustomer: (id: number, customer: Partial<Usuario>) => Promise<Usuario>;
   deleteCustomer: (id: number) => Promise<void>;
   
   // Utilities
@@ -43,7 +43,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     initialSort = { field: 'totalSpent', direction: 'desc' }
   } = options;
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Usuario[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,22 +110,23 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
-  const createCustomer = useCallback(async (customerData: CustomerFormData) => {
+  const createCustomer = useCallback(async (customerData: Omit<Usuario, 'id'>) => {
     try {
       setLoading(true);
+      setError(null);
       const newCustomer = await customersService.createCustomer(customerData);
-      await fetchCustomers(); // Refresh the list
+      setCustomers(prev => [...prev, newCustomer]);
       return newCustomer;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
       setError(errorMessage);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
-  }, [fetchCustomers]);
+  }, []);
 
-  const updateCustomer = useCallback(async (id: number, customerData: Partial<CustomerFormData>) => {
+  const updateCustomer = useCallback(async (id: number, customerData: Partial<Usuario>) => {
     try {
       setLoading(true);
       const updatedCustomer = await customersService.updateCustomer(id, customerData);
@@ -188,7 +189,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
 
 // Hook for getting single customer
 export const useCustomer = (id: string | null) => {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customer, setCustomer] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,7 +203,7 @@ export const useCustomer = (id: string | null) => {
       try {
         setLoading(true);
         setError(null);
-        const fetchedCustomer = await customersService.getCustomer(id);
+        const fetchedCustomer = await customersService.getCustomer(parseInt(id));
         setCustomer(fetchedCustomer);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar cliente');

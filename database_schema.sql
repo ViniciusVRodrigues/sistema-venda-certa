@@ -20,7 +20,7 @@ CREATE TABLE endereco (
     complemento VARCHAR(50),
     bairro VARCHAR(50),
     cidade VARCHAR(50),
-    estado VACHAR(2),
+    estado VARCHAR(2),
     cep VARCHAR(10),
     favorito BOOLEAN,
     fk_usuario_id INTEGER

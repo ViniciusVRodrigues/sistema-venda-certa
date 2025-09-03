@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Order, FilterOptions, PaginationData, SortOption } from '../types';
+import type { Pedido, FilterOptions, PaginationData, SortOption } from '../types';
 import { ordersService } from '../services/admin/ordersService';
 
 interface UseOrdersOptions {

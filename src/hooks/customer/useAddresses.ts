@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { addressService, type CreateAddressData, type UpdateAddressData } from '../../services/customer/addressService';
-import type { Address } from '../../types';
+import type { Endereco } from '../../types';
 
-export const useAddresses = () => {
-  const [addresses, setAddresses] = useState<Address[]>([]);
+export const useAddresses = (customerId?: number) => {
+  const [addresses, setAddresses] = useState<Endereco[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +12,7 @@ export const useAddresses = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await addressService.getAddresses();
+      const data = await addressService.getAddresses(customerId);
       setAddresses(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar endereços';
@@ -20,10 +20,10 @@ export const useAddresses = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [customerId]);
 
   // Create address
-  const createAddress = useCallback(async (data: CreateAddressData): Promise<Address> => {
+  const createAddress = useCallback(async (data: CreateAddressData): Promise<Endereco> => {
     try {
       setLoading(true);
       setError(null);
@@ -40,11 +40,14 @@ export const useAddresses = () => {
   }, [loadAddresses]);
 
   // Update address
-  const updateAddress = useCallback(async (data: UpdateAddressData): Promise<Address> => {
+  const updateAddress = useCallback(async (data: UpdateAddressData): Promise<Endereco> => {
     try {
       setLoading(true);
       setError(null);
       const updatedAddress = await addressService.updateAddress(data);
+      if (!updatedAddress) {
+        throw new Error('Endereço não encontrado');
+      }
       await loadAddresses(); // Reload list
       return updatedAddress;
     } catch (err) {
@@ -57,7 +60,7 @@ export const useAddresses = () => {
   }, [loadAddresses]);
 
   // Delete address
-  const deleteAddress = useCallback(async (id: string): Promise<void> => {
+  const deleteAddress = useCallback(async (id: number): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -72,24 +75,8 @@ export const useAddresses = () => {
     }
   }, [loadAddresses]);
 
-  // Set default address
-  const setDefaultAddress = useCallback(async (id: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      await addressService.setDefaultAddress(id);
-      await loadAddresses(); // Reload list
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao definir endereço padrão';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [loadAddresses]);
-
-  // Get default address
-  const defaultAddress = addresses.find(address => address.isDefault);
+  // Get favorite address
+  const favoriteAddress = addresses.find(address => address.favorito);
 
   // Clear error
   const clearError = useCallback(() => {
@@ -103,16 +90,14 @@ export const useAddresses = () => {
 
   return {
     addresses,
-    defaultAddress,
+    favoriteAddress,
     loading,
     error,
     createAddress,
     updateAddress,
     deleteAddress,
-    setDefaultAddress,
     loadAddresses,
     clearError,
-    // Validation helper
-    validateAddress: addressService.validateAddress
+    validateAddressData: addressService.validateAddressData
   };
 };

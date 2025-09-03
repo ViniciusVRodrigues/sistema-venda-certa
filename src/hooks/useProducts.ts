@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Product, Category, FilterOptions, PaginationData, SortOption } from '../types';
+import type { Produto, Categoria, FilterOptions, PaginationData, SortOption } from '../types';
 import { productsService } from '../services/admin/productsService';
 
 interface UseProductsOptions {
@@ -10,7 +10,7 @@ interface UseProductsOptions {
 }
 
 interface UseProductsResult {
-  products: Product[];
+  products: Produto[];
   pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
@@ -24,11 +24,11 @@ interface UseProductsResult {
   setPage: (page: number) => void;
   
   // CRUD operations
-  createProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Product>;
-  updateProduct: (id: string, product: Partial<Product>) => Promise<Product>;
-  deleteProduct: (id: string) => Promise<void>;
-  bulkUpdateStatus: (ids: string[], status: Product['status']) => Promise<void>;
-  bulkDelete: (ids: string[]) => Promise<void>;
+  createProduct: (product: Omit<Produto, 'id'>) => Promise<Produto>;
+  updateProduct: (id: number, product: Partial<Produto>) => Promise<Produto>;
+  deleteProduct: (id: number) => Promise<void>;
+  bulkUpdateStatus: (ids: number[], status: number) => Promise<void>;
+  bulkDelete: (ids: number[]) => Promise<void>;
   
   // Utilities
   refetch: () => Promise<void>;
@@ -43,7 +43,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     initialSort = { field: 'updatedAt', direction: 'desc' }
   } = options;
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Produto[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     setPaginationState(prev => ({ ...prev, page }));
   }, []);
 
-  const createProduct = useCallback(async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createProduct = useCallback(async (productData: Omit<Produto, 'id'>) => {
     try {
       setLoading(true);
       const newProduct = await productsService.createProduct(productData);
@@ -95,7 +95,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     }
   }, [fetchProducts]);
 
-  const updateProduct = useCallback(async (id: string, productData: Partial<Product>) => {
+  const updateProduct = useCallback(async (id: number, productData: Partial<Produto>) => {
     try {
       setLoading(true);
       const updatedProduct = await productsService.updateProduct(id, productData);
@@ -110,7 +110,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     }
   }, [fetchProducts]);
 
-  const deleteProduct = useCallback(async (id: string) => {
+  const deleteProduct = useCallback(async (id: number) => {
     try {
       setLoading(true);
       await productsService.deleteProduct(id);
@@ -124,7 +124,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     }
   }, [fetchProducts]);
 
-  const bulkUpdateStatus = useCallback(async (ids: string[], status: Product['status']) => {
+  const bulkUpdateStatus = useCallback(async (ids: number[], status: number) => {
     try {
       setLoading(true);
       await productsService.bulkUpdateStatus(ids, status);
@@ -138,7 +138,7 @@ export const useProducts = (options: UseProductsOptions = {}): UseProductsResult
     }
   }, [fetchProducts]);
 
-  const bulkDelete = useCallback(async (ids: string[]) => {
+  const bulkDelete = useCallback(async (ids: number[]) => {
     try {
       setLoading(true);
       await productsService.bulkDelete(ids);

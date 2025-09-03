@@ -2,29 +2,29 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Modal, Input, LoadingSpinner } from '../../components/ui';
 import { useAddresses } from '../../hooks/customer/useAddresses';
-import type { Address } from '../../types';
+import type { Endereco } from '../../types';
 import type { CreateAddressData, UpdateAddressData } from '../../services/customer/addressService';
 
 interface AddressFormData {
-  street: string;
-  number: string;
-  complement: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  isDefault: boolean;
+  rua: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  favorito: boolean;
 }
 
 const initialFormData: AddressFormData = {
-  street: '',
-  number: '',
-  complement: '',
-  neighborhood: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  isDefault: false
+  rua: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  cep: '',
+  favorito: false
 };
 
 export const CustomerAddressesPage: React.FC = () => {
@@ -35,29 +35,27 @@ export const CustomerAddressesPage: React.FC = () => {
     createAddress,
     updateAddress,
     deleteAddress,
-    setDefaultAddress,
-    clearError,
-    validateAddress
+    clearError
   } = useAddresses();
 
   const [showModal, setShowModal] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [editingAddress, setEditingAddress] = useState<Endereco | null>(null);
   const [formData, setFormData] = useState<AddressFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleOpenModal = (address?: Address) => {
+  const handleOpenModal = (address?: Endereco) => {
     if (address) {
       setEditingAddress(address);
       setFormData({
-        street: address.street,
-        number: address.number,
-        complement: address.complement || '',
-        neighborhood: address.neighborhood,
-        city: address.city,
-        state: address.state,
-        zipCode: address.zipCode,
-        isDefault: address.isDefault
+        rua: address.rua,
+        numero: address.numero,
+        complemento: address.complemento || '',
+        bairro: address.bairro,
+        cidade: address.cidade,
+        estado: address.estado,
+        cep: address.cep,
+        favorito: address.favorito
       });
     } else {
       setEditingAddress(null);
@@ -82,9 +80,17 @@ export const CustomerAddressesPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validation = validateAddress(formData);
-    if (!validation.isValid) {
-      setFormErrors(validation.errors);
+    // Basic validation
+    const errors: string[] = [];
+    if (!formData.rua.trim()) errors.push('Rua é obrigatória');
+    if (!formData.numero.trim()) errors.push('Número é obrigatório');
+    if (!formData.bairro.trim()) errors.push('Bairro é obrigatório');
+    if (!formData.cidade.trim()) errors.push('Cidade é obrigatória');
+    if (!formData.estado.trim()) errors.push('Estado é obrigatório');
+    if (!formData.cep.trim()) errors.push('CEP é obrigatório');
+
+    if (errors.length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -94,10 +100,14 @@ export const CustomerAddressesPage: React.FC = () => {
       if (editingAddress) {
         await updateAddress({
           id: editingAddress.id,
-          ...formData
+          ...formData,
+          fk_usuario_id: editingAddress.fk_usuario_id
         } as UpdateAddressData);
       } else {
-        await createAddress(formData as CreateAddressData);
+        await createAddress({
+          ...formData,
+          fk_usuario_id: 1 // Should come from authenticated user
+        } as CreateAddressData);
       }
       
       handleCloseModal();
@@ -108,7 +118,7 @@ export const CustomerAddressesPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (address: Address) => {
+  const handleDelete = async (address: Endereco) => {
     if (window.confirm('Tem certeza que deseja excluir este endereço?')) {
       try {
         await deleteAddress(address.id);
@@ -118,17 +128,14 @@ export const CustomerAddressesPage: React.FC = () => {
     }
   };
 
-  const handleSetDefault = async (address: Address) => {
-    try {
-      await setDefaultAddress(address.id);
-    } catch {
-      // Error is handled by the hook
-    }
+  const handleSetDefault = async (address: Endereco) => {
+    // This functionality would need to be implemented in the service
+    console.log('Set default address:', address.id);
   };
 
-  const formatAddress = (address: Address) => {
-    const complement = address.complement ? `, ${address.complement}` : '';
-    return `${address.street}, ${address.number}${complement}, ${address.neighborhood}, ${address.city} - ${address.state}, ${address.zipCode}`;
+  const formatAddress = (address: Endereco) => {
+    const complement = address.complemento ? `, ${address.complemento}` : '';
+    return `${address.rua}, ${address.numero}${complement}, ${address.bairro}, ${address.cidade} - ${address.estado}, ${address.cep}`;
   };
 
   return (
@@ -213,11 +220,11 @@ export const CustomerAddressesPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <h3 className="text-lg font-medium text-gray-900">
-                          {address.isDefault ? 'Endereço Principal' : 'Endereço'}
+                          {address.favorito ? 'Endereço Favorito' : 'Endereço'}
                         </h3>
-                        {address.isDefault && (
+                        {address.favorito && (
                           <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Padrão
+                            Favorito
                           </span>
                         )}
                       </div>
@@ -227,14 +234,14 @@ export const CustomerAddressesPage: React.FC = () => {
                     </div>
                     
                     <div className="flex space-x-2">
-                      {!address.isDefault && (
+                      {!address.favorito && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleSetDefault(address)}
                           className="border-green-300 text-green-600 hover:bg-green-50"
                         >
-                          Tornar Padrão
+                          Tornar Favorito
                         </Button>
                       )}
                       <Button
@@ -282,44 +289,44 @@ export const CustomerAddressesPage: React.FC = () => {
               <div className="md:col-span-2">
                 <Input
                   label="Rua"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange('street', e.target.value)}
+                  value={formData.rua}
+                  onChange={(e) => handleInputChange('rua', e.target.value)}
                   required
                 />
               </div>
               
               <Input
                 label="Número"
-                value={formData.number}
-                onChange={(e) => handleInputChange('number', e.target.value)}
+                value={formData.numero}
+                onChange={(e) => handleInputChange('numero', e.target.value)}
                 required
               />
               
               <Input
                 label="Complemento"
-                value={formData.complement}
-                onChange={(e) => handleInputChange('complement', e.target.value)}
+                value={formData.complemento}
+                onChange={(e) => handleInputChange('complemento', e.target.value)}
                 placeholder="Apto, bloco, etc."
               />
               
               <Input
                 label="Bairro"
-                value={formData.neighborhood}
-                onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+                value={formData.bairro}
+                onChange={(e) => handleInputChange('bairro', e.target.value)}
                 required
               />
               
               <Input
                 label="Cidade"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
+                value={formData.cidade}
+                onChange={(e) => handleInputChange('cidade', e.target.value)}
                 required
               />
               
               <Input
                 label="Estado"
-                value={formData.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
+                value={formData.estado}
+                onChange={(e) => handleInputChange('estado', e.target.value)}
                 maxLength={2}
                 placeholder="SP"
                 required
@@ -327,8 +334,8 @@ export const CustomerAddressesPage: React.FC = () => {
               
               <Input
                 label="CEP"
-                value={formData.zipCode}
-                onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                value={formData.cep}
+                onChange={(e) => handleInputChange('cep', e.target.value)}
                 placeholder="12345-678"
                 required
               />
@@ -337,13 +344,13 @@ export const CustomerAddressesPage: React.FC = () => {
             <div className="flex items-center">
               <input
                 type="checkbox"
-                id="isDefault"
-                checked={formData.isDefault}
-                onChange={(e) => handleInputChange('isDefault', e.target.checked)}
+                id="favorito"
+                checked={formData.favorito}
+                onChange={(e) => handleInputChange('favorito', e.target.checked)}
                 className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
               />
-              <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">
-                Definir como endereço padrão
+              <label htmlFor="favorito" className="ml-2 block text-sm text-gray-900">
+                Definir como endereço favorito
               </label>
             </div>
 

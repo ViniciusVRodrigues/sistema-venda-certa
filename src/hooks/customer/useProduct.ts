@@ -6,7 +6,7 @@ import type {
   ProductDetailsResponse, 
   CreateReviewData 
 } from '../../services/customer/productDetailsService';
-import type { Review } from '../../types';
+import type { AvaliacaoProduto, Usuario } from '../../types';
 
 export const useProductDetails = (productId: string | null) => {
   const [data, setData] = useState<ProductDetailsResponse | null>(null);
@@ -23,7 +23,14 @@ export const useProductDetails = (productId: string | null) => {
       setLoading(true);
       setError(null);
       
-      const response = await productDetailsService.getProductDetails(productId);
+      // Convert string ID to number for the service
+      const numericId = parseInt(productId, 10);
+      if (isNaN(numericId)) {
+        setError('ID do produto inválido');
+        return;
+      }
+      
+      const response = await productDetailsService.getProductDetails(numericId);
       if (response) {
         setData(response);
       } else {
@@ -52,7 +59,7 @@ export const useProductDetails = (productId: string | null) => {
 };
 
 export const useProductReviews = (productId: string, pageSize: number = 10) => {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<(AvaliacaoProduto & { usuario: Usuario | undefined })[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +71,14 @@ export const useProductReviews = (productId: string, pageSize: number = 10) => {
       setLoading(true);
       setError(null);
       
-      const response = await productDetailsService.getProductReviews(productId, page, pageSize);
+      // Convert string ID to number
+      const numericId = parseInt(productId, 10);
+      if (isNaN(numericId)) {
+        setError('ID do produto inválido');
+        return;
+      }
+      
+      const response = await productDetailsService.getProductReviews(numericId, page, pageSize);
       
       setReviews(response.reviews);
       setCurrentPage(response.pagination.page);
@@ -117,12 +131,12 @@ export const useCreateReview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createReview = useCallback(async (reviewData: CreateReviewData): Promise<Review | null> => {
+  const createReview = useCallback(async (reviewData: CreateReviewData, usuarioId: number): Promise<AvaliacaoProduto | null> => {
     try {
       setLoading(true);
       setError(null);
       
-      const review = await productDetailsService.createReview(reviewData);
+      const review = await productDetailsService.createReview(reviewData, usuarioId);
       return review;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar avaliação';
@@ -161,7 +175,14 @@ export const useProductSpecifications = (productId: string | null) => {
         setLoading(true);
         setError(null);
         
-        const specs = await productDetailsService.getProductSpecifications(productId);
+        // Convert string ID to number
+        const numericId = parseInt(productId, 10);
+        if (isNaN(numericId)) {
+          setError('ID do produto inválido');
+          return;
+        }
+        
+        const specs = await productDetailsService.getProductSpecifications(numericId);
         setSpecifications(specs);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar especificações');
