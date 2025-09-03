@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, LoadingSpinner, Badge, Modal, Button, Input, Select } from '../ui';
 import { useAuth } from '../../context/AuthContext';
 import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
-import type { Order } from '../../types';
+import type { Pedido } from '../../types';
 
 export const DeliveryOrdersList: React.FC = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState<'shipped' | 'delivered'>('shipped');
+  const [newStatus, setNewStatus] = useState<2 | 3>(2); // 2=enviado, 3=entregue
   const [statusNotes, setStatusNotes] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [pagination, setPagination] = useState({
@@ -26,17 +26,13 @@ export const DeliveryOrdersList: React.FC = () => {
     search: ''
   });
 
-  useEffect(() => {
-    loadOrders();
-  }, [pagination.page, filters]);
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       if (user?.id) {
         const response = await deliveryOrderService.getOrders(
-          user.id,
+          Number(user.id),
           filters,
           { page: pagination.page, pageSize: pagination.pageSize }
         );
@@ -49,22 +45,24 @@ export const DeliveryOrdersList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, filters, pagination.page, pagination.pageSize]);
 
-  const handleOrderClick = (order: Order) => {
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const handleOrderClick = (order: Pedido) => {
     setSelectedOrder(order);
     setIsDetailModalOpen(true);
   };
 
-  const handleStatusUpdate = (order: Order) => {
+  const handleStatusUpdate = (order: Pedido) => {
     setSelectedOrder(order);
-    // Set default next status based on current status
-    if (order.status === 'processing' || order.status === 'received') {
-      setNewStatus('shipped');
-    } else if (order.status === 'shipped') {
-      setNewStatus('delivered');
+    if (order.status === 1) { // processando
+      setNewStatus(2); // enviado
+    } else if (order.status === 2) { // enviado
+      setNewStatus(3); // entregue
     }
-    setStatusNotes('');
     setIsStatusModalOpen(true);
   };
 
@@ -90,20 +88,22 @@ export const DeliveryOrdersList: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: Order['status']) => {
-    const statusConfig = {
-      received: { variant: 'info' as const, label: 'Recebido' },
-      processing: { variant: 'warning' as const, label: 'Preparando' },
-      shipped: { variant: 'info' as const, label: 'Em Rota' },
-      delivered: { variant: 'success' as const, label: 'Entregue' },
-      cancelled: { variant: 'danger' as const, label: 'Cancelado' }
+  const getStatusBadge = (status: Pedido['status']) => {
+    const statusConfig: Record<number, { variant: 'info' | 'warning' | 'success' | 'danger'; label: string }> = {
+      0: { variant: 'info', label: 'Recebido' },
+      1: { variant: 'warning', label: 'Processando' },
+      2: { variant: 'info', label: 'Enviado' },
+      3: { variant: 'success', label: 'Entregue' },
+      4: { variant: 'danger', label: 'Cancelado' }
     };
-
-    const config = statusConfig[status];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatCurrency = (value: number) => {
+    
+    const config = statusConfig[status] || { variant: 'info', label: 'Desconhecido' };
+    return (
+      <Badge variant={config.variant}>
+        {config.label}
+      </Badge>
+    );
+  };  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -120,18 +120,14 @@ export const DeliveryOrdersList: React.FC = () => {
     }).format(date);
   };
 
-  const canUpdateStatus = (order: Order) => {
-    return ['processing', 'received', 'shipped'].includes(order.status);
+  const canUpdateStatus = (order: Pedido) => {
+    return order.status === 1 || order.status === 2; // processando ou enviado
   };
 
-  const getNextStatusLabel = (currentStatus: Order['status']) => {
-    if (currentStatus === 'processing' || currentStatus === 'received') {
-      return 'Marcar como Em Rota';
-    }
-    if (currentStatus === 'shipped') {
-      return 'Marcar como Entregue';
-    }
-    return '';
+  const getNextStatusLabel = (currentStatus: Pedido['status']) => {
+    if (currentStatus === 1) return 'Marcar como Enviado';
+    if (currentStatus === 2) return 'Marcar como Entregue';
+    return 'Status não pode ser alterado';
   };
 
   if (loading && orders.length === 0) {
@@ -233,14 +229,14 @@ export const DeliveryOrdersList: React.FC = () => {
                         Pedido #{order.id}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Cliente: {order.customer.name}
+                        Cliente ID: #{order.fk_usuario_id}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Criado em: {formatDateTime(order.createdAt)}
+                        Endereço ID: #{order.fk_endereco_id}
                       </p>
-                      {order.estimatedDelivery && (
+                      {order.estimativaEntrega && (
                         <p className="text-sm text-gray-600">
-                          Previsto para: {formatDateTime(order.estimatedDelivery)}
+                          Previsto para: {formatDateTime(order.estimativaEntrega)}
                         </p>
                       )}
                     </div>
@@ -257,29 +253,24 @@ export const DeliveryOrdersList: React.FC = () => {
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Endereço de Entrega:</h4>
                         <p className="text-sm text-gray-600">
-                          {order.deliveryAddress.street}, {order.deliveryAddress.number}
-                          {order.deliveryAddress.complement && `, ${order.deliveryAddress.complement}`}
+                          Endereço ID: #{order.fk_endereco_id}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {order.deliveryAddress.neighborhood}, {order.deliveryAddress.city}/{order.deliveryAddress.state}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          CEP: {order.deliveryAddress.zipCode}
+                          Método de Entrega ID: #{order.fk_metodoEntrega_id}
                         </p>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Itens do Pedido:</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">Informações do Pedido:</h4>
                         <div className="space-y-1">
-                          {order.items.slice(0, 3).map(item => (
-                            <p key={item.id} className="text-sm text-gray-600">
-                              {item.quantity}x {item.product.name}
-                            </p>
-                          ))}
-                          {order.items.length > 3 && (
-                            <p className="text-sm text-gray-500">
-                              +{order.items.length - 3} itens...
-                            </p>
-                          )}
+                          <p className="text-sm text-gray-600">
+                            Subtotal: R$ {order.subtotal.toFixed(2)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Taxa de Entrega: R$ {order.taxaEntrega.toFixed(2)}
+                          </p>
+                          <p className="text-sm font-medium text-gray-900">
+                            Total: R$ {order.total.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -343,21 +334,17 @@ export const DeliveryOrdersList: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Informações do Cliente</h4>
                   <div className="space-y-2">
-                    <p><strong>Nome:</strong> {selectedOrder.customer.name}</p>
-                    <p><strong>Email:</strong> {selectedOrder.customer.email}</p>
-                    <p><strong>Telefone:</strong> {selectedOrder.customer.phone || 'Não informado'}</p>
+                    <p><strong>Cliente ID:</strong> {selectedOrder.fk_usuario_id}</p>
+                    <p><strong>Anotações:</strong> {selectedOrder.anotacoes || 'Nenhuma anotação'}</p>
                   </div>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Status do Pedido</h4>
                   <div className="space-y-2">
                     <div>{getStatusBadge(selectedOrder.status)}</div>
-                    <p><strong>Criado em:</strong> {formatDateTime(selectedOrder.createdAt)}</p>
-                    {selectedOrder.estimatedDelivery && (
-                      <p><strong>Previsão:</strong> {formatDateTime(selectedOrder.estimatedDelivery)}</p>
-                    )}
-                    {selectedOrder.deliveredAt && (
-                      <p><strong>Entregue em:</strong> {formatDateTime(selectedOrder.deliveredAt)}</p>
+                    <p><strong>Data Estimativa:</strong> {selectedOrder.estimativaEntrega ? formatDateTime(selectedOrder.estimativaEntrega) : 'Não definida'}</p>
+                    {selectedOrder.dataEntrega && (
+                      <p><strong>Entregue em:</strong> {formatDateTime(selectedOrder.dataEntrega)}</p>
                     )}
                   </div>
                 </div>
@@ -366,54 +353,26 @@ export const DeliveryOrdersList: React.FC = () => {
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Endereço de Entrega</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p>{selectedOrder.deliveryAddress.street}, {selectedOrder.deliveryAddress.number}</p>
-                  {selectedOrder.deliveryAddress.complement && (
-                    <p>{selectedOrder.deliveryAddress.complement}</p>
-                  )}
-                  <p>{selectedOrder.deliveryAddress.neighborhood}, {selectedOrder.deliveryAddress.city}/{selectedOrder.deliveryAddress.state}</p>
-                  <p>CEP: {selectedOrder.deliveryAddress.zipCode}</p>
+                  <p><strong>Endereço ID:</strong> {selectedOrder.fk_endereco_id}</p>
+                  <p><strong>Método de Entrega:</strong> {selectedOrder.fk_metodoEntrega_id}</p>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900 mb-3">Itens do Pedido</h4>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Produto
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Qtd
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Preço Unit.
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {selectedOrder.items.map(item => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3 text-sm text-gray-900">{item.product.name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{item.quantity}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(item.price)}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{formatCurrency(item.price * item.quantity)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                  <span className="font-medium">Taxa de Entrega:</span>
-                  <span>{formatCurrency(selectedOrder.deliveryFee)}</span>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <span className="text-lg font-bold">Total:</span>
-                  <span className="text-lg font-bold">{formatCurrency(selectedOrder.total)}</span>
+                <h4 className="font-medium text-gray-900 mb-3">Informações Financeiras</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Taxa de Entrega:</span>
+                    <span>{formatCurrency(selectedOrder.taxaEntrega)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-lg font-bold">Total:</span>
+                    <span className="text-lg font-bold">{formatCurrency(selectedOrder.total)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -438,11 +397,11 @@ export const DeliveryOrdersList: React.FC = () => {
             <Select
               label="Novo Status"
               value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value as 'shipped' | 'delivered')}
+              onChange={(e) => setNewStatus(Number(e.target.value) as 2 | 3)}
               options={
-                selectedOrder?.status === 'shipped'
-                  ? [{ value: 'delivered', label: 'Entregue' }]
-                  : [{ value: 'shipped', label: 'Em Rota' }]
+                selectedOrder?.status === 2
+                  ? [{ value: '3', label: 'Entregue' }]
+                  : [{ value: '2', label: 'Em Rota' }]
               }
             />
             <Input

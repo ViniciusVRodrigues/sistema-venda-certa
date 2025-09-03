@@ -217,7 +217,7 @@ export const useProduct = (id: string | null) => {
 
 // Hook for categories
 export const useCategories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -234,7 +234,7 @@ export const useCategories = () => {
     }
   }, []);
 
-  const createCategory = useCallback(async (categoryData: Omit<Category, 'id'>) => {
+  const createCategory = useCallback(async (categoryData: Omit<Categoria, 'id'>) => {
     try {
       const newCategory = await productsService.createCategory(categoryData);
       setCategories(prev => [...prev, newCategory]);

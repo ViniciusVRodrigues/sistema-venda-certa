@@ -10,7 +10,7 @@ interface UseOrdersOptions {
 }
 
 interface UseOrdersResult {
-  orders: Order[];
+  orders: Pedido[];
   pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
@@ -24,13 +24,9 @@ interface UseOrdersResult {
   setPage: (page: number) => void;
   
   // Order operations
-  updateOrderStatus: (orderId: string, status: Order['status'], notes?: string) => Promise<Order>;
-  updatePaymentStatus: (orderId: string, paymentStatus: Order['paymentStatus']) => Promise<Order>;
-  cancelOrder: (orderId: string, reason: string) => Promise<Order>;
-  deleteOrder: (orderId: string) => Promise<void>;
-  addOrderNote: (orderId: string, note: string) => Promise<Order>;
-  resendNotification: (orderId: string, type: 'status_update' | 'payment_reminder') => Promise<void>;
-  generateReceipt: (orderId: string) => Promise<string>;
+  updateOrderStatus: (orderId: string, status: number, notes?: string) => Promise<Pedido>;
+  updatePaymentStatus: (orderId: string, paymentStatus: number) => Promise<Pedido>;
+  cancelOrder: (orderId: string, reason: string) => Promise<Pedido>;
   
   // Utilities
   refetch: () => Promise<void>;
@@ -45,7 +41,7 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
     initialSort = { field: 'createdAt', direction: 'desc' }
   } = options;
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Pedido[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +54,15 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
       setLoading(true);
       setError(null);
       
-      const response = await ordersService.getOrders(filters, paginationState, sort);
+      // Convert string filters to numbers for schema compatibility
+      const convertedFilters: any = {
+        search: filters.search,
+        dateRange: filters.dateRange,
+        status: filters.status && filters.status !== 'all' ? Number(filters.status) : undefined,
+        paymentStatus: filters.paymentStatus && filters.paymentStatus !== 'all' ? Number(filters.paymentStatus) : undefined,
+      };
+      
+      const response = await ordersService.getOrders(convertedFilters, paginationState, sort);
       setOrders(response.orders);
       setPagination(response.pagination);
     } catch (err) {
@@ -82,25 +86,27 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
     setPaginationState(prev => ({ ...prev, page }));
   }, []);
 
-  const updateOrderStatus = useCallback(async (orderId: string, status: Order['status'], notes?: string) => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: number, notes?: string) => {
     try {
-      setLoading(true);
-      const updatedOrder = await ordersService.updateOrderStatus(orderId, status, notes);
-      await fetchOrders(); // Refresh the list
+      const updatedOrder = await ordersService.updateOrderStatus(Number(orderId), status, notes);
+      if (updatedOrder) {
+        setOrders(current => 
+          current.map(order => 
+            order.id === Number(orderId) ? updatedOrder : order
+          )
+        );
+      }
       return updatedOrder;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar status do pedido';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Erro ao atualizar status do pedido:', error);
+      throw error;
     }
-  }, [fetchOrders]);
+  }, []);
 
-  const updatePaymentStatus = useCallback(async (orderId: string, paymentStatus: Order['paymentStatus']) => {
+  const updatePaymentStatus = useCallback(async (orderId: string, paymentStatus: number) => {
     try {
       setLoading(true);
-      const updatedOrder = await ordersService.updatePaymentStatus(orderId, paymentStatus);
+      const updatedOrder = await ordersService.updatePaymentStatus(Number(orderId), paymentStatus);
       await fetchOrders(); // Refresh the list
       return updatedOrder;
     } catch (err) {
@@ -115,7 +121,7 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
   const cancelOrder = useCallback(async (orderId: string, reason: string) => {
     try {
       setLoading(true);
-      const cancelledOrder = await ordersService.cancelOrder(orderId, reason);
+      const cancelledOrder = await ordersService.cancelOrder(Number(orderId), reason);
       await fetchOrders(); // Refresh the list
       return cancelledOrder;
     } catch (err) {
@@ -126,52 +132,6 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
       setLoading(false);
     }
   }, [fetchOrders]);
-
-  const deleteOrder = useCallback(async (orderId: string) => {
-    try {
-      setLoading(true);
-      await ordersService.deleteOrder(orderId);
-      await fetchOrders(); // Refresh the list
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao excluir pedido';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchOrders]);
-
-  const addOrderNote = useCallback(async (orderId: string, note: string) => {
-    try {
-      const updatedOrder = await ordersService.addOrderNote(orderId, note);
-      await fetchOrders(); // Refresh the list
-      return updatedOrder;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar observação';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, [fetchOrders]);
-
-  const resendNotification = useCallback(async (orderId: string, type: 'status_update' | 'payment_reminder') => {
-    try {
-      await ordersService.resendNotification(orderId, type);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao reenviar notificação';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, []);
-
-  const generateReceipt = useCallback(async (orderId: string) => {
-    try {
-      return await ordersService.generateReceipt(orderId);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar comprovante';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, []);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -195,21 +155,17 @@ export const useOrders = (options: UseOrdersOptions = {}): UseOrdersResult => {
     setFilters,
     setSort,
     setPage,
-    updateOrderStatus,
-    updatePaymentStatus,
-    cancelOrder,
-    deleteOrder,
-    addOrderNote,
-    resendNotification,
-    generateReceipt,
+    updateOrderStatus: updateOrderStatus as (orderId: string, status: number, notes?: string) => Promise<Pedido>,
+    updatePaymentStatus: updatePaymentStatus as (orderId: string, paymentStatus: number) => Promise<Pedido>,
+    cancelOrder: cancelOrder as (orderId: string, reason: string) => Promise<Pedido>,
     refetch: fetchOrders,
     clearError
   };
 };
 
 // Hook for getting single order
-export const useOrder = (id: string | null) => {
-  const [order, setOrder] = useState<Order | null>(null);
+export const useOrder = (id: number | null) => {
+  const [order, setOrder] = useState<Pedido | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,12 +196,12 @@ export const useOrder = (id: string | null) => {
 
 // Hook for getting orders grouped by status (for Kanban view)
 export const useOrdersByStatus = () => {
-  const [ordersByStatus, setOrdersByStatus] = useState<Record<Order['status'], Order[]>>({
-    'received': [],
-    'processing': [],
-    'shipped': [],
-    'delivered': [],
-    'cancelled': []
+  const [ordersByStatus, setOrdersByStatus] = useState<Record<number, Pedido[]>>({
+    0: [], // recebido
+    1: [], // processando
+    2: [], // enviado
+    3: [], // entregue
+    4: []  // cancelado
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,8 +210,22 @@ export const useOrdersByStatus = () => {
     try {
       setLoading(true);
       setError(null);
-      const grouped = await ordersService.getOrdersByStatus();
-      setOrdersByStatus(grouped);
+      // Use getOrders to get all orders and group them by status
+      const response = await ordersService.getOrders({}, { page: 1, pageSize: 1000 });
+      const grouped = response.orders.reduce((acc, order) => {
+        const status = order.status;
+        if (!acc[status]) acc[status] = [];
+        acc[status].push(order);
+        return acc;
+      }, {} as Record<number, Pedido[]>);
+      
+      setOrdersByStatus({
+        0: grouped[0] || [],
+        1: grouped[1] || [],
+        2: grouped[2] || [],
+        3: grouped[3] || [],
+        4: grouped[4] || [],
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar pedidos por status');
     } finally {
