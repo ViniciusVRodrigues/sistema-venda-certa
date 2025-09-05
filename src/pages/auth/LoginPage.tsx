@@ -53,6 +53,34 @@ export const LoginPage: React.FC = () => {
               </div>
             )}
             
+            {/* Quick Access Buttons */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="text-sm font-medium text-blue-900 mb-3">🧪 Acesso Rápido para Teste</h3>
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {setEmail('admin@email.com'); setPassword('123');}}
+                  className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
+                >
+                  👨‍💼 <strong>Admin:</strong> admin@email.com
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {setEmail('carlos.entregador@email.com'); setPassword('123');}}
+                  className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
+                >
+                  🚚 <strong>Entregador:</strong> carlos.entregador@email.com
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {setEmail('joao.silva@email.com'); setPassword('123');}}
+                  className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
+                >
+                  👤 <strong>Cliente:</strong> joao.silva@email.com
+                </button>
+              </div>
+            </div>
+            
             <Input
               label="Email"
               type="email"
@@ -60,7 +88,6 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="seu@email.com"
-              helpText="Use 'admin@test.com' para acesso administrativo"
             />
             
             <Input
