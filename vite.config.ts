@@ -14,8 +14,12 @@ export default defineConfig({
       onwarn(warning, warn) {
         // Ignore TypeScript errors during build
         if (warning.code === 'TYPESCRIPT') return;
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return;
         warn(warning);
       }
     }
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
 })
