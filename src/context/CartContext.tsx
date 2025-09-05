@@ -10,14 +10,14 @@ interface CartState {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: { product: Product; quantity: number; variation?: ProductVariation } }
-  | { type: 'REMOVE_ITEM'; payload: { productId: string; variationId?: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; variationId?: string; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: { productId: number; variationId?: number } }
+  | { type: 'UPDATE_QUANTITY'; payload: { productId: number; variationId?: number; quantity: number } }
   | { type: 'CLEAR_CART' };
 
 interface CartContextType extends CartState {
   addItem: (product: Product, quantity: number, variation?: ProductVariation) => void;
-  removeItem: (productId: string, variationId?: string) => void;
-  updateQuantity: (productId: string, quantity: number, variationId?: string) => void;
+  removeItem: (productId: number, variationId?: number) => void;
+  updateQuantity: (productId: number, quantity: number, variationId?: number) => void;
   clearCart: () => void;
 }
 
@@ -118,11 +118,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dispatch({ type: 'ADD_ITEM', payload: { product, quantity, variation } });
   };
 
-  const removeItem = (productId: string, variationId?: string) => {
+  const removeItem = (productId: number, variationId?: number) => {
     dispatch({ type: 'REMOVE_ITEM', payload: { productId, variationId } });
   };
 
-  const updateQuantity = (productId: string, quantity: number, variationId?: string) => {
+  const updateQuantity = (productId: number, quantity: number, variationId?: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, variationId, quantity } });
   };
 

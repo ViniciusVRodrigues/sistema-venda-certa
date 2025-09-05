@@ -1,22 +1,23 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import type { ReactNode } from 'react';
-import type { User } from '../types';
+import type { Usuario } from '../types';
+import { mockUsuarios } from '../services/mock/databaseMockData';
 
 interface AuthState {
-  user: User | null;
+  user: Usuario | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
 type AuthAction =
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'LOGIN_SUCCESS'; payload: User }
+  | { type: 'LOGIN_SUCCESS'; payload: Usuario }
   | { type: 'LOGOUT' };
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (userData: Partial<User>) => Promise<void>;
+  register: (userData: Partial<Usuario>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,30 +52,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading: false,
   });
 
-  const login = async (email: string, _password: string) => {
+  const login = async (email: string, password: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock user data based on email
-      const mockUser: User = {
-        id: '1',
-        name: email.includes('admin') ? 'Admin User' : 
-              email.includes('delivery') ? 'Delivery Driver' : 'Customer User',
-        email,
-        role: email.includes('admin') ? 'admin' : 
-              email.includes('delivery') ? 'delivery' : 'customer',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      // Find user in mockUsuarios by email
+      const foundUser = mockUsuarios.find(user => user.email === email);
       
-      dispatch({ type: 'LOGIN_SUCCESS', payload: mockUser });
-      localStorage.setItem('user', JSON.stringify(mockUser));
-    } catch {
+      if (!foundUser) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      // In a real app, you would validate the password here
+      // For now, we'll just check if password is not empty
+      if (!password) {
+        throw new Error('Senha é obrigatória');
+      }
+      
+      dispatch({ type: 'LOGIN_SUCCESS', payload: foundUser });
+      localStorage.setItem('user', JSON.stringify(foundUser));
+    } catch (error) {
       dispatch({ type: 'SET_LOADING', payload: false });
-      throw new Error('Login failed');
+      throw error;
     }
   };
 
@@ -83,21 +85,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('user');
   };
 
-  const register = async (userData: Partial<User>) => {
+  const register = async (userData: Partial<Usuario>) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name || '',
+      const newUser: Usuario = {
+        id: Date.now(),
+        nome: userData.nome || '',
         email: userData.email || '',
-        role: 'customer',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        cargo: 'customer',
+        numeroCelular: userData.numeroCelular,
+        status: 1, // Active
+        totalPedidos: 0,
+        totalGasto: 0,
+        entregasFeitas: 0,
+        nota: 0
       };
+      
+      // Add to mock data (in real app would save to database)
+      mockUsuarios.push(newUser);
       
       dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
       localStorage.setItem('user', JSON.stringify(newUser));

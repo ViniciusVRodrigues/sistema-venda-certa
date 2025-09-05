@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Customer, FilterOptions, PaginationData, SortOption } from '../types';
+import type { Usuario, FilterOptions, PaginationData, SortOption } from '../types';
 import { customersService } from '../services/admin/customersService';
 
 interface UseCustomersOptions {
@@ -10,7 +10,7 @@ interface UseCustomersOptions {
 }
 
 interface UseCustomersResult {
-  customers: Customer[];
+  customers: Usuario[];
   pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
@@ -24,11 +24,11 @@ interface UseCustomersResult {
   setPage: (page: number) => void;
   
   // Customer operations
-  updateVipStatus: (customerId: string, isVip: boolean) => Promise<Customer>;
-  updateBlockedStatus: (customerId: string, isBlocked: boolean) => Promise<Customer>;
-  createCustomer: (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>) => Promise<Customer>;
-  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<Customer>;
-  deleteCustomer: (id: string) => Promise<void>;
+  updateVipStatus: (customerId: number, isVip: boolean) => Promise<Usuario>;
+  updateBlockedStatus: (customerId: number, isBlocked: boolean) => Promise<Usuario>;
+  createCustomer: (customer: Omit<Usuario, 'id'>) => Promise<Usuario>;
+  updateCustomer: (id: number, customer: Partial<Usuario>) => Promise<Usuario>;
+  deleteCustomer: (id: number) => Promise<void>;
   
   // Utilities
   refetch: () => Promise<void>;
@@ -43,7 +43,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     initialSort = { field: 'totalSpent', direction: 'desc' }
   } = options;
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Usuario[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,12 +80,12 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     setPaginationState(prev => ({ ...prev, page }));
   }, []);
 
-  const updateVipStatus = useCallback(async (customerId: string, isVip: boolean) => {
+  const updateVipStatus = useCallback(async (customerId: number, isVip: boolean) => {
     try {
       setLoading(true);
-      const updatedCustomer = await customersService.updateVipStatus(customerId, isVip);
+      const updatedCustomer = await customersService.toggleVipStatus(customerId);
       await fetchCustomers(); // Refresh the list
-      return updatedCustomer;
+      return updatedCustomer!;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar status VIP';
       setError(errorMessage);
@@ -95,12 +95,12 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
-  const updateBlockedStatus = useCallback(async (customerId: string, isBlocked: boolean) => {
+  const updateBlockedStatus = useCallback(async (customerId: number, isBlocked: boolean) => {
     try {
       setLoading(true);
-      const updatedCustomer = await customersService.updateBlockedStatus(customerId, isBlocked);
+      const updatedCustomer = await customersService.toggleBlockedStatus(customerId);
       await fetchCustomers(); // Refresh the list
-      return updatedCustomer;
+      return updatedCustomer!;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar status de bloqueio';
       setError(errorMessage);
@@ -110,27 +110,28 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
-  const createCustomer = useCallback(async (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'orders' | 'totalOrders' | 'totalSpent' | 'lastOrderDate'>) => {
+  const createCustomer = useCallback(async (customerData: Omit<Usuario, 'id'>) => {
     try {
       setLoading(true);
+      setError(null);
       const newCustomer = await customersService.createCustomer(customerData);
-      await fetchCustomers(); // Refresh the list
+      setCustomers(prev => [...prev, newCustomer]);
       return newCustomer;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao criar cliente';
       setError(errorMessage);
-      throw new Error(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
-  }, [fetchCustomers]);
+  }, []);
 
-  const updateCustomer = useCallback(async (id: string, customerData: Partial<Customer>) => {
+  const updateCustomer = useCallback(async (id: number, customerData: Partial<Usuario>) => {
     try {
       setLoading(true);
       const updatedCustomer = await customersService.updateCustomer(id, customerData);
       await fetchCustomers(); // Refresh the list
-      return updatedCustomer;
+      return updatedCustomer!;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar cliente';
       setError(errorMessage);
@@ -140,7 +141,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
-  const deleteCustomer = useCallback(async (id: string) => {
+  const deleteCustomer = useCallback(async (id: number) => {
     try {
       setLoading(true);
       await customersService.deleteCustomer(id);
@@ -188,7 +189,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
 
 // Hook for getting single customer
 export const useCustomer = (id: string | null) => {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [customer, setCustomer] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,7 +203,7 @@ export const useCustomer = (id: string | null) => {
       try {
         setLoading(true);
         setError(null);
-        const fetchedCustomer = await customersService.getCustomer(id);
+        const fetchedCustomer = await customersService.getCustomer(parseInt(id));
         setCustomer(fetchedCustomer);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar cliente');

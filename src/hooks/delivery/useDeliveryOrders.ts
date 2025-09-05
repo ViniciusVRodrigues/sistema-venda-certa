@@ -1,149 +1,149 @@
 import { useState, useEffect, useCallback } from 'react';
 import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
-import type { Order } from '../../types';
+import type { Pedido } from '../../types';
 
-interface DeliveryStats {
-  totalPendingOrders: number;
-  totalInRouteOrders: number;
-  totalDeliveredToday: number;
-  totalEarningsToday: number;
+interface EstatisticasEntrega {
+  totalPedidosPendentes: number;
+  totalPedidosRota: number;
+  totalEntregasHoje: number;
+  totalGanhosHoje: number;
 }
 
 interface UseDeliveryOrdersResult {
-  orders: Order[];
-  stats: DeliveryStats | null;
-  loading: boolean;
-  error: string | null;
-  pagination: {
-    page: number;
-    pageSize: number;
+  pedidos: Pedido[];
+  estatisticas: EstatisticasEntrega | null;
+  carregando: boolean;
+  erro: string | null;
+  paginacao: {
+    pagina: number;
+    tamanhoPagina: number;
     total: number;
-    totalPages: number;
+    totalPaginas: number;
   };
-  filters: {
+  filtros: {
     status: string;
-    search: string;
+    busca: string;
   };
-  updateFilters: (newFilters: Partial<{ status: string; search: string }>) => void;
-  changePage: (page: number) => void;
-  refreshOrders: () => Promise<void>;
-  updateOrderStatus: (orderId: string, status: 'shipped' | 'delivered', notes?: string) => Promise<void>;
-  getOrderById: (orderId: string) => Promise<Order | null>;
+  atualizarFiltros: (novosFiltros: Partial<{ status: string; busca: string }>) => void;
+  mudarPagina: (pagina: number) => void;
+  atualizarPedidos: () => Promise<void>;
+  atualizarStatusPedido: (pedidoId: number, status: 3 | 4, anotacoes?: string) => Promise<void>;
+  obterPedidoPorId: (pedidoId: number) => Promise<Pedido | null>;
 }
 
-export const useDeliveryOrders = (driverId: string): UseDeliveryOrdersResult => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<DeliveryStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 10,
+export const useDeliveryOrders = (entregadorId: number): UseDeliveryOrdersResult => {
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [estatisticas, setEstatisticas] = useState<EstatisticasEntrega | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [paginacao, setPaginacao] = useState({
+    pagina: 1,
+    tamanhoPagina: 10,
     total: 0,
-    totalPages: 0
+    totalPaginas: 0
   });
-  const [filters, setFilters] = useState({
+  const [filtros, setFiltros] = useState({
     status: 'all',
-    search: ''
+    busca: ''
   });
 
-  // Load orders
-  const loadOrders = useCallback(async () => {
+  // Carregar pedidos
+  const carregarPedidos = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setCarregando(true);
+      setErro(null);
       
-      const response = await deliveryOrderService.getOrders(
-        driverId,
-        filters,
-        { page: pagination.page, pageSize: pagination.pageSize }
+      const response = await deliveryOrderService.obterPedidos(
+        entregadorId,
+        filtros,
+        { pagina: paginacao.pagina, tamanhoPagina: paginacao.tamanhoPagina }
       );
       
-      setOrders(response.orders);
-      setPagination(response.pagination);
+      setPedidos(response.pedidos);
+      setPaginacao(response.paginacao);
     } catch (err) {
       console.error('Erro ao carregar pedidos:', err);
-      setError('Erro ao carregar pedidos');
+      setErro('Erro ao carregar pedidos');
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
-  }, [driverId, filters, pagination.page, pagination.pageSize]);
+  }, [entregadorId, filtros, paginacao.pagina, paginacao.tamanhoPagina]);
 
-  // Load stats
-  const loadStats = useCallback(async () => {
+  // Carregar estatísticas
+  const carregarEstatisticas = useCallback(async () => {
     try {
-      const statsData = await deliveryOrderService.getDashboardStats(driverId);
-      setStats(statsData);
+      const dadosEstatisticas = await deliveryOrderService.obterEstatisticasDashboard(entregadorId);
+      setEstatisticas(dadosEstatisticas);
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err);
     }
-  }, [driverId]);
+  }, [entregadorId]);
 
-  // Update filters
-  const updateFilters = useCallback((newFilters: Partial<{ status: string; search: string }>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+  // Atualizar filtros
+  const atualizarFiltros = useCallback((novosFiltros: Partial<{ status: string; busca: string }>) => {
+    setFiltros(prev => ({ ...prev, ...novosFiltros }));
+    setPaginacao(prev => ({ ...prev, pagina: 1 })); // Reset para primeira página
   }, []);
 
-  // Change page
-  const changePage = useCallback((page: number) => {
-    setPagination(prev => ({ ...prev, page }));
+  // Mudar página
+  const mudarPagina = useCallback((pagina: number) => {
+    setPaginacao(prev => ({ ...prev, pagina }));
   }, []);
 
-  // Refresh orders
-  const refreshOrders = useCallback(async () => {
-    await Promise.all([loadOrders(), loadStats()]);
-  }, [loadOrders, loadStats]);
+  // Atualizar pedidos
+  const atualizarPedidos = useCallback(async () => {
+    await Promise.all([carregarPedidos(), carregarEstatisticas()]);
+  }, [carregarPedidos, carregarEstatisticas]);
 
-  // Update order status
-  const updateOrderStatus = useCallback(async (
-    orderId: string, 
-    status: 'shipped' | 'delivered', 
-    notes?: string
+  // Atualizar status do pedido
+  const atualizarStatusPedido = useCallback(async (
+    pedidoId: number, 
+    status: 3 | 4, 
+    anotacoes?: string
   ) => {
     try {
-      await deliveryOrderService.updateOrderStatus(orderId, status, notes);
-      await refreshOrders(); // Reload data
+      await deliveryOrderService.atualizarStatusPedido(pedidoId, status, anotacoes);
+      await atualizarPedidos(); // Recarregar dados
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
       throw err;
     }
-  }, [refreshOrders]);
+  }, [atualizarPedidos]);
 
-  // Get order by ID
-  const getOrderById = useCallback(async (orderId: string) => {
+  // Obter pedido por ID
+  const obterPedidoPorId = useCallback(async (pedidoId: number) => {
     try {
-      return await deliveryOrderService.getOrderById(orderId);
+      return await deliveryOrderService.obterPedidoPorId(pedidoId);
     } catch (err) {
       console.error('Erro ao buscar pedido:', err);
       throw err;
     }
   }, []);
 
-  // Load data on mount and when dependencies change
+  // Carregar dados ao montar e quando dependências mudam
   useEffect(() => {
-    if (driverId) {
-      loadOrders();
+    if (entregadorId) {
+      carregarPedidos();
     }
-  }, [loadOrders, driverId]);
+  }, [carregarPedidos, entregadorId]);
 
   useEffect(() => {
-    if (driverId) {
-      loadStats();
+    if (entregadorId) {
+      carregarEstatisticas();
     }
-  }, [loadStats, driverId]);
+  }, [carregarEstatisticas, entregadorId]);
 
   return {
-    orders,
-    stats,
-    loading,
-    error,
-    pagination,
-    filters,
-    updateFilters,
-    changePage,
-    refreshOrders,
-    updateOrderStatus,
-    getOrderById
+    pedidos,
+    estatisticas,
+    carregando,
+    erro,
+    paginacao,
+    filtros,
+    atualizarFiltros,
+    mudarPagina,
+    atualizarPedidos,
+    atualizarStatusPedido,
+    obterPedidoPorId
   };
 };

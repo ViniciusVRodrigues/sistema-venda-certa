@@ -3,18 +3,18 @@ import { useProducts, useCategories } from '../../../hooks/useProducts';
 import { DataTable, type Column } from '../shared/DataTable';
 import { DeleteConfirmationModal, ProductFormModal, type ProductFormData } from '../shared/modals';
 import { Button, Card, Badge, Select } from '../../ui';
-import type { Product } from '../../../types';
+import type { Produto } from '../../../types';
 
 export const ProductsList: React.FC = () => {
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   
   // Modal states
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Produto | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
 
   const {
@@ -53,7 +53,7 @@ export const ProductsList: React.FC = () => {
   const handleBulkActivate = async () => {
     if (selectedProducts.length === 0) return;
     try {
-      await bulkUpdateStatus(selectedProducts, 'active');
+      await bulkUpdateStatus(selectedProducts, 1);
       setSelectedProducts([]);
     } catch (error) {
       console.error('Erro ao ativar produtos:', error);
@@ -63,7 +63,7 @@ export const ProductsList: React.FC = () => {
   const handleBulkDeactivate = async () => {
     if (selectedProducts.length === 0) return;
     try {
-      await bulkUpdateStatus(selectedProducts, 'inactive');
+      await bulkUpdateStatus(selectedProducts, 0);
       setSelectedProducts([]);
     } catch (error) {
       console.error('Erro ao desativar produtos:', error);
@@ -81,12 +81,12 @@ export const ProductsList: React.FC = () => {
     setIsProductFormOpen(true);
   };
 
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = (product: Produto) => {
     setEditingProduct(product);
     setIsProductFormOpen(true);
   };
 
-  const handleDeleteProduct = (product: Product) => {
+  const handleDeleteProduct = (product: Produto) => {
     setDeletingProduct(product);
     setSelectedProducts([]);
     setIsDeleteModalOpen(true);
@@ -96,10 +96,26 @@ export const ProductsList: React.FC = () => {
     try {
       setIsFormLoading(true);
       
+      // Converter ProductFormData para o formato esperado pelo service
+      const produtoData: Partial<Produto> = {
+        nome: formData.nome,
+        descricao: formData.descricao,
+        descricaoResumida: formData.descricaoResumida,
+        preco: formData.preco,
+        medida: formData.medida,
+        estoque: formData.estoque,
+        status: formData.status,
+        sku: formData.sku,
+        tags: formData.tags,
+        fk_categoria_id: formData.categoria.id,
+        // Converter string para Uint8Array se necessário
+        imagem: formData.imagem ? new TextEncoder().encode(formData.imagem) : undefined
+      };
+      
       if (editingProduct) {
-        await updateProduct(editingProduct.id, formData);
+        await updateProduct(editingProduct.id, produtoData);
       } else {
-        await createProduct(formData);
+        await createProduct(produtoData as Omit<Produto, 'id'>);
       }
       
       setIsProductFormOpen(false);
@@ -128,16 +144,14 @@ export const ProductsList: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: Product['status']) => {
+  const getStatusBadge = (status: number) => {
     switch (status) {
-      case 'active':
+      case 1:
         return <Badge variant="success">Ativo</Badge>;
-      case 'inactive':
+      case 0:
         return <Badge variant="default">Inativo</Badge>;
-      case 'out_of_stock':
-        return <Badge variant="danger">Sem Estoque</Badge>;
       default:
-        return <Badge variant="default">{status}</Badge>;
+        return <Badge variant="default">Desconhecido</Badge>;
     }
   };
 
@@ -150,16 +164,16 @@ export const ProductsList: React.FC = () => {
     return <span className="text-green-600 font-medium">{stock}</span>;
   };
 
-  const columns: Column<Product>[] = [
+  const columns: Column<Produto>[] = [
     {
-      key: 'images',
+      key: 'imagem',
       title: '',
       width: '16',
-      render: (images: string[]) => (
+      render: (imagem: Uint8Array | undefined) => (
         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-          {images && images.length > 0 ? (
+          {imagem ? (
             <img 
-              src={images[0]} 
+              src={`data:image/jpeg;base64,${btoa(String.fromCharCode(...imagem))}`}
               alt="Produto" 
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -175,55 +189,52 @@ export const ProductsList: React.FC = () => {
       )
     },
     {
-      key: 'name',
+      key: 'nome',
       title: 'Produto',
       sortable: true,
-      render: (name: string, record: Product) => (
+      render: (nome: string, record: Produto) => (
         <div>
-          <div className="font-medium text-gray-900">{name}</div>
+          <div className="font-medium text-gray-900">{nome}</div>
           <div className="text-sm text-gray-500">{record.sku}</div>
         </div>
       )
     },
     {
-      key: 'category',
+      key: 'fk_categoria_id',
       title: 'Categoria',
       sortable: true,
-      render: (category: Product['category']) => category.name
+      render: (categoria_id: number) => {
+        const categoria = categories.find(cat => cat.id === categoria_id);
+        return categoria ? categoria.nome : 'Sem categoria';
+      }
     },
     {
-      key: 'price',
+      key: 'preco',
       title: 'Preço',
       sortable: true,
       align: 'right',
-      render: (price: number) => 
-        price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      render: (preco: number) => 
+        preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     },
     {
-      key: 'stock',
+      key: 'estoque',
       title: 'Estoque',
       sortable: true,
       align: 'center',
-      render: (stock: number) => getStockBadge(stock)
+      render: (estoque: number) => getStockBadge(estoque)
     },
     {
       key: 'status',
       title: 'Status',
       sortable: true,
       align: 'center',
-      render: (status: Product['status']) => getStatusBadge(status)
-    },
-    {
-      key: 'updatedAt',
-      title: 'Atualizado em',
-      sortable: true,
-      render: (date: Date) => new Date(date).toLocaleDateString('pt-BR')
+      render: (status: number) => getStatusBadge(status)
     },
     {
       key: 'actions',
       title: 'Ações',
       width: '40',
-      render: (_, record: Product) => (
+      render: (_, record: Produto) => (
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -298,8 +309,8 @@ export const ProductsList: React.FC = () => {
         options={[
           { value: '', label: 'Todas as categorias' },
           ...categories.map(category => ({
-            value: category.id,
-            label: category.name
+            value: category.id.toString(),
+            label: category.nome
           }))
         ]}
       />
@@ -358,7 +369,7 @@ export const ProductsList: React.FC = () => {
           <Card>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {products.filter(p => p.status === 'active').length}
+                {products.filter(p => p.status === 1).length}
               </div>
               <div className="text-sm text-gray-600">Produtos ativos</div>
             </div>
@@ -366,7 +377,7 @@ export const ProductsList: React.FC = () => {
           <Card>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">
-                {products.filter(p => p.stock <= 10).length}
+                {products.filter(p => p.estoque <= 10).length}
               </div>
               <div className="text-sm text-gray-600">Estoque baixo</div>
             </div>
@@ -374,7 +385,7 @@ export const ProductsList: React.FC = () => {
           <Card>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
-                {products.filter(p => p.stock === 0).length}
+                {products.filter(p => p.estoque === 0).length}
               </div>
               <div className="text-sm text-gray-600">Sem estoque</div>
             </div>
@@ -391,8 +402,9 @@ export const ProductsList: React.FC = () => {
           onSort={setSort}
           onSearch={handleSearch}
           searchPlaceholder="Buscar por nome, SKU ou descrição..."
-          selectedRows={selectedProducts}
-          onSelectionChange={setSelectedProducts}
+          selectedRows={selectedProducts.map(String)}
+          onSelectionChange={(ids) => setSelectedProducts(ids.map(Number))}
+          rowKey={(product) => product.id.toString()}
           emptyText="Nenhum produto encontrado. Cadastre o primeiro produto para começar."
           bulkActions={bulkActions}
           filters={filtersComponent}
@@ -423,7 +435,7 @@ export const ProductsList: React.FC = () => {
           itemCount={deletingProduct ? 1 : selectedProducts.length}
           title={deletingProduct ? 'Excluir produto' : undefined}
           message={deletingProduct 
-            ? `Tem certeza que deseja excluir o produto "${deletingProduct.name}"? Esta ação não pode ser desfeita.`
+            ? `Tem certeza que deseja excluir o produto "${deletingProduct.nome}"? Esta ação não pode ser desfeita.`
             : undefined
           }
         />

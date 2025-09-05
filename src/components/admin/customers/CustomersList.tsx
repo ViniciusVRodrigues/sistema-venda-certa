@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
 import { useCustomers, useCustomerStats } from '../../../hooks/useCustomers';
+import { customersService } from '../../../services/admin/customersService';
 import { DataTable, type Column } from '../shared/DataTable';
 import { Drawer } from '../shared/Drawer';
 import { DeleteConfirmationModal, CustomerFormModal, type CustomerFormData } from '../shared/modals';
 import { Button, Card, Badge, Select } from '../../ui';
-import type { Customer } from '../../../types';
+import type { Usuario, Endereco } from '../../../types';
 
 export const CustomersList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [vipFilter, setVipFilter] = useState<boolean>(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Usuario | null>(null);
+  const [customerAddresses, setCustomerAddresses] = useState<Endereco[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   // Modal states
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Usuario | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Usuario | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
 
   const {
@@ -52,9 +54,18 @@ export const CustomersList: React.FC = () => {
     setFilters({ ...currentFilters, vipOnly: vipOnly || undefined });
   };
 
-  const openCustomerDetails = (customer: Customer) => {
+  const openCustomerDetails = async (customer: Usuario) => {
     setSelectedCustomer(customer);
     setIsDrawerOpen(true);
+    
+    // Buscar endereços do cliente do service
+    try {
+      const addresses = await customersService.getCustomerAddresses(customer.id);
+      setCustomerAddresses(addresses);
+    } catch (error) {
+      console.error('Erro ao carregar endereços:', error);
+      setCustomerAddresses([]);
+    }
   };
 
   const closeCustomerDetails = () => {
@@ -62,7 +73,7 @@ export const CustomersList: React.FC = () => {
     setIsDrawerOpen(false);
   };
 
-  const handleToggleVip = async (customerId: string, currentVipStatus: boolean) => {
+  const handleToggleVip = async (customerId: number, currentVipStatus: boolean) => {
     try {
       await updateVipStatus(customerId, !currentVipStatus);
       // Refresh customer details if the same customer is selected
@@ -77,7 +88,7 @@ export const CustomersList: React.FC = () => {
     }
   };
 
-  const handleToggleBlocked = async (customerId: string, currentBlockedStatus: boolean) => {
+  const handleToggleBlocked = async (customerId: number, currentBlockedStatus: boolean) => {
     try {
       await updateBlockedStatus(customerId, !currentBlockedStatus);
       // Refresh customer details if the same customer is selected
@@ -98,12 +109,12 @@ export const CustomersList: React.FC = () => {
     setIsCustomerFormOpen(true);
   };
 
-  const handleEditCustomer = (customer: Customer) => {
+  const handleEditCustomer = (customer: Usuario) => {
     setEditingCustomer(customer);
     setIsCustomerFormOpen(true);
   };
 
-  const handleDeleteCustomer = (customer: Customer) => {
+  const handleDeleteCustomer = (customer: Usuario) => {
     setDeletingCustomer(customer);
     setIsDeleteModalOpen(true);
   };
@@ -112,10 +123,22 @@ export const CustomersList: React.FC = () => {
     try {
       setIsFormLoading(true);
       
+      // Converter CustomerFormData para Usuario
+      const usuarioData: Partial<Usuario> = {
+        nome: formData.name,
+        email: formData.email,
+        numeroCelular: formData.phone,
+        cargo: 'customer',
+        status: 1, // Ativo por padrão
+        totalPedidos: 0,
+        totalGasto: 0,
+        entregasFeitas: 0
+      };
+      
       if (editingCustomer) {
-        await updateCustomer(editingCustomer.id, formData);
+        await updateCustomer(editingCustomer.id, usuarioData);
       } else {
-        await createCustomer(formData);
+        await createCustomer(usuarioData as Omit<Usuario, 'id'>);
       }
       
       setIsCustomerFormOpen(false);
@@ -139,86 +162,71 @@ export const CustomersList: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (customer: Customer) => {
-    if (customer.isBlocked) {
+  const getStatusBadge = (customer: Usuario) => {
+    if (customer.status === 0) {
       return <Badge variant="danger">Bloqueado</Badge>;
     }
-    if (customer.isVip) {
+    if (customer.nota && customer.nota >= 4.5) {
       return <Badge variant="success">VIP</Badge>;
     }
     return <Badge variant="default">Ativo</Badge>;
   };
 
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return '-';
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(new Date(date));
-  };
-
-  const columns: Column<Customer>[] = [
+  const columns: Column<Usuario>[] = [
     {
-      key: 'name',
+      key: 'nome',
       title: 'Cliente',
       sortable: true,
-      render: (name: string, record: Customer) => (
+      render: (nome: string, record: Usuario) => (
         <div>
-          <div className="font-medium text-gray-900">{name}</div>
+          <div className="font-medium text-gray-900">{nome}</div>
           <div className="text-sm text-gray-500">{record.email}</div>
         </div>
       )
     },
     {
-      key: 'phone',
+      key: 'numeroCelular',
       title: 'Telefone',
-      render: (phone: string | undefined) => phone || '-'
+      render: (numeroCelular: string | undefined) => numeroCelular || '-'
     },
     {
-      key: 'totalOrders',
+      key: 'totalPedidos',
       title: 'Pedidos',
       sortable: true,
       align: 'center',
-      render: (totalOrders: number) => (
-        <span className="font-medium">{totalOrders}</span>
+      render: (totalPedidos: number) => (
+        <span className="font-medium">{totalPedidos}</span>
       )
     },
     {
-      key: 'totalSpent',
+      key: 'totalGasto',
       title: 'Total Gasto',
       sortable: true,
       align: 'right',
-      render: (totalSpent: number) => 
-        totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      render: (totalGasto: number) => 
+        totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     },
     {
       key: 'averageTicket',
       title: 'Ticket Médio',
       sortable: true,
       align: 'right',
-      render: (_, record: Customer) => {
-        const averageTicket = record.totalOrders > 0 ? record.totalSpent / record.totalOrders : 0;
+      render: (_, record: Usuario) => {
+        const averageTicket = record.totalPedidos > 0 ? record.totalGasto / record.totalPedidos : 0;
         return averageTicket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       }
-    },
-    {
-      key: 'lastOrderDate',
-      title: 'Último Pedido',
-      sortable: true,
-      render: (lastOrderDate: Date | undefined) => formatDate(lastOrderDate)
     },
     {
       key: 'status',
       title: 'Status',
       align: 'center',
-      render: (_, record: Customer) => getStatusBadge(record)
+      render: (_, record: Usuario) => getStatusBadge(record)
     },
     {
       key: 'actions',
       title: 'Ações',
       width: '48',
-      render: (_, record: Customer) => (
+      render: (_, record: Usuario) => (
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -244,9 +252,9 @@ export const CustomersList: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleToggleVip(record.id, record.isVip)}
-            className={record.isVip ? 'text-yellow-600' : 'text-gray-400'}
-            title={record.isVip ? 'Remover VIP' : 'Tornar VIP'}
+            onClick={() => handleToggleVip(record.id, record.nota ? record.nota >= 4.5 : false)}
+            className={record.nota && record.nota >= 4.5 ? 'text-yellow-600' : 'text-gray-400'}
+            title={record.nota && record.nota >= 4.5 ? 'Remover VIP' : 'Tornar VIP'}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -378,25 +386,25 @@ export const CustomersList: React.FC = () => {
         <Drawer
           isOpen={isDrawerOpen}
           onClose={closeCustomerDetails}
-          title={selectedCustomer ? selectedCustomer.name : ''}
+          title={selectedCustomer ? selectedCustomer.nome : ''}
           size="lg"
           footer={
             selectedCustomer && (
               <div className="flex justify-between">
                 <div className="flex space-x-2">
                   <Button
-                    variant={selectedCustomer.isVip ? 'secondary' : 'outline'}
+                    variant={selectedCustomer.nota && selectedCustomer.nota >= 4.5 ? 'secondary' : 'outline'}
                     size="sm"
-                    onClick={() => handleToggleVip(selectedCustomer.id, selectedCustomer.isVip)}
+                    onClick={() => handleToggleVip(selectedCustomer.id, selectedCustomer.nota ? selectedCustomer.nota >= 4.5 : false)}
                   >
-                    {selectedCustomer.isVip ? 'Remover VIP' : 'Tornar VIP'}
+                    {selectedCustomer.nota && selectedCustomer.nota >= 4.5 ? 'Remover VIP' : 'Tornar VIP'}
                   </Button>
                   <Button
-                    variant={selectedCustomer.isBlocked ? 'primary' : 'danger'}
+                    variant={selectedCustomer.status === 0 ? 'primary' : 'danger'}
                     size="sm"
-                    onClick={() => handleToggleBlocked(selectedCustomer.id, selectedCustomer.isBlocked)}
+                    onClick={() => handleToggleBlocked(selectedCustomer.id, selectedCustomer.status === 0)}
                   >
-                    {selectedCustomer.isBlocked ? 'Desbloquear' : 'Bloquear'}
+                    {selectedCustomer.status === 0 ? 'Desbloquear' : 'Bloquear'}
                   </Button>
                 </div>
                 <Button
@@ -419,7 +427,7 @@ export const CustomersList: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Nome</p>
-                      <p className="font-medium">{selectedCustomer.name}</p>
+                      <p className="font-medium">{selectedCustomer.nome}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Email</p>
@@ -427,11 +435,11 @@ export const CustomersList: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Telefone</p>
-                      <p className="font-medium">{selectedCustomer.phone || '-'}</p>
+                      <p className="font-medium">{selectedCustomer.numeroCelular || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Cliente desde</p>
-                      <p className="font-medium">{formatDate(selectedCustomer.createdAt)}</p>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className="font-medium">{selectedCustomer.status === 1 ? 'Ativo' : 'Inativo'}</p>
                     </div>
                   </div>
                 </div>
@@ -443,10 +451,10 @@ export const CustomersList: React.FC = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center space-x-4">
                     {getStatusBadge(selectedCustomer)}
-                    {selectedCustomer.isVip && (
+                    {selectedCustomer.nota && selectedCustomer.nota >= 4.5 && (
                       <Badge variant="warning">VIP</Badge>
                     )}
-                    {selectedCustomer.isBlocked && (
+                    {selectedCustomer.status === 0 && (
                       <Badge variant="danger">Bloqueado</Badge>
                     )}
                   </div>
@@ -458,19 +466,19 @@ export const CustomersList: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Estatísticas de Compras</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-600">{selectedCustomer.totalOrders}</div>
+                    <div className="text-2xl font-bold text-blue-600">{selectedCustomer.totalPedidos}</div>
                     <div className="text-sm text-gray-600">Total de pedidos</div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {selectedCustomer.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {selectedCustomer.totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </div>
                     <div className="text-sm text-gray-600">Total gasto</div>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {selectedCustomer.totalOrders > 0 
-                        ? (selectedCustomer.totalSpent / selectedCustomer.totalOrders).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                      {selectedCustomer.totalPedidos > 0 
+                        ? (selectedCustomer.totalGasto / selectedCustomer.totalPedidos).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                         : 'R$ 0,00'
                       }
                     </div>
@@ -482,22 +490,22 @@ export const CustomersList: React.FC = () => {
               {/* Addresses */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Endereços</h3>
-                {selectedCustomer.addresses.length > 0 ? (
+                {customerAddresses.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedCustomer.addresses.map((address) => (
+                    {customerAddresses.map((address) => (
                       <div key={address.id} className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-medium">
-                              {address.street}, {address.number}
-                              {address.complement && ` - ${address.complement}`}
+                              {address.rua}, {address.numero}
+                              {address.complemento && ` - ${address.complemento}`}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {address.neighborhood}, {address.city} - {address.state}
+                              {address.bairro}, {address.cidade} - {address.estado}
                             </p>
-                            <p className="text-sm text-gray-600">CEP: {address.zipCode}</p>
+                            <p className="text-sm text-gray-600">CEP: {address.cep}</p>
                           </div>
-                          {address.isDefault && (
+                          {address.favorito && (
                             <Badge variant="info">Padrão</Badge>
                           )}
                         </div>
@@ -511,16 +519,6 @@ export const CustomersList: React.FC = () => {
                 )}
               </div>
 
-              {/* Last Order Info */}
-              {selectedCustomer.lastOrderDate && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Última Compra</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">Data do último pedido</p>
-                    <p className="font-medium">{formatDate(selectedCustomer.lastOrderDate)}</p>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </Drawer>
@@ -533,7 +531,7 @@ export const CustomersList: React.FC = () => {
             setEditingCustomer(null);
           }}
           onSubmit={handleCustomerFormSubmit}
-          customer={editingCustomer}
+          customer={null} // TODO: Converter Usuario para Customer no modal
           loading={isFormLoading}
         />
 
@@ -549,7 +547,7 @@ export const CustomersList: React.FC = () => {
           itemCount={1}
           title="Excluir cliente"
           message={deletingCustomer 
-            ? `Tem certeza que deseja excluir o cliente "${deletingCustomer.name}"? Esta ação não pode ser desfeita.`
+            ? `Tem certeza que deseja excluir o cliente "${deletingCustomer.nome}"? Esta ação não pode ser desfeita.`
             : undefined
           }
         />

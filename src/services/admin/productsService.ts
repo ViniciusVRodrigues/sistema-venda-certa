@@ -1,142 +1,97 @@
-import type { Product, Category, FilterOptions, PaginationData, SortOption } from '../../types';
+import type { Produto, Categoria, FilterOptions, PaginationData, SortOption } from '../../types';
+import { mockProdutos, mockCategorias } from '../mock/databaseMockData';
 
-// Mock data for categories
-const mockCategories: Category[] = [
-  { id: '1', name: 'Eletrônicos', description: 'Produtos eletrônicos e acessórios', isActive: true },
-  { id: '2', name: 'Roupas', description: 'Vestuário e acessórios', isActive: true },
-  { id: '3', name: 'Casa & Jardim', description: 'Itens para casa e jardim', isActive: true },
-  { id: '4', name: 'Esportes', description: 'Equipamentos esportivos', isActive: true },
-  { id: '5', name: 'Livros', description: 'Livros e materiais educativos', isActive: true },
-];
-
-// Mock data for products
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Smartphone Samsung Galaxy',
-    description: 'Smartphone com tela de 6.1" e câmera de 64MP',
-    shortDescription: 'Smartphone Samsung com excelente qualidade',
-    category: mockCategories[0],
-    price: 1299.99,
-    unit: 'un',
-    stock: 15,
-    status: 'active',
-    images: ['/images/smartphone1.jpg', '/images/smartphone2.jpg'],
-    tags: ['smartphone', 'samsung', 'android'],
-    sku: 'SAMS-GAL-001',
-    variations: [
-      { id: '1-1', name: '128GB - Preto', price: 1299.99, stock: 10, sku: 'SAMS-GAL-001-128-BK' },
-      { id: '1-2', name: '256GB - Branco', price: 1499.99, stock: 5, sku: 'SAMS-GAL-001-256-WH' }
-    ],
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-20'),
-  },
-  {
-    id: '2',
-    name: 'Camiseta Básica',
-    description: 'Camiseta de algodão 100% com corte moderno',
-    shortDescription: 'Camiseta básica de algodão',
-    category: mockCategories[1],
-    price: 49.99,
-    unit: 'un',
-    stock: 50,
-    status: 'active',
-    images: ['/images/tshirt1.jpg'],
-    tags: ['camiseta', 'algodão', 'básica'],
-    sku: 'CAM-BAS-001',
-    variations: [
-      { id: '2-1', name: 'P - Azul', price: 49.99, stock: 15 },
-      { id: '2-2', name: 'M - Azul', price: 49.99, stock: 20 },
-      { id: '2-3', name: 'G - Azul', price: 49.99, stock: 15 },
-    ],
-    createdAt: new Date('2024-01-10'),
-    updatedAt: new Date('2024-01-15'),
-  },
-  {
-    id: '3',
-    name: 'Headset Gamer',
-    description: 'Headset com microfone e som surround 7.1',
-    shortDescription: 'Headset para jogos com qualidade premium',
-    category: mockCategories[0],
-    price: 299.99,
-    unit: 'un',
-    stock: 8,
-    status: 'active',
-    images: ['/images/headset1.jpg'],
-    tags: ['headset', 'gamer', 'áudio'],
-    sku: 'HEAD-GAM-001',
-    createdAt: new Date('2024-01-08'),
-    updatedAt: new Date('2024-01-12'),
-  },
-  {
-    id: '4',
-    name: 'Mesa de Escritório',
-    description: 'Mesa de escritório em MDF com gavetas',
-    shortDescription: 'Mesa funcional para escritório',
-    category: mockCategories[2],
-    price: 399.99,
-    unit: 'un',
-    stock: 3,
-    status: 'active',
-    images: ['/images/desk1.jpg'],
-    tags: ['mesa', 'escritório', 'móveis'],
-    sku: 'MES-ESC-001',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-10'),
-  }
-];
+// Use the database schema data directly
+const mockProducts: Produto[] = [...mockProdutos];
+const mockCategories: Categoria[] = [...mockCategorias];
 
 interface ProductsResponse {
-  products: Product[];
+  products: Produto[];
   pagination: PaginationData;
 }
 
 export const productsService = {
   // Get all products with filters, pagination and sorting
   async getProducts(
-    filters: FilterOptions = {},
+    filters: FilterOptions & { categoryId?: number; status?: number; inStock?: boolean } = {},
     pagination: { page: number; pageSize: number } = { page: 1, pageSize: 10 },
-    sort: SortOption = { field: 'updatedAt', direction: 'desc' }
+    sort: SortOption = { field: 'nome', direction: 'asc' }
   ): Promise<ProductsResponse> {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
 
     let filteredProducts = [...mockProducts];
 
-    // Apply search filter
+    // Apply search filter (nome, sku, tags)
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filteredProducts = filteredProducts.filter(product =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
+        product.nome.toLowerCase().includes(searchLower) ||
         product.sku?.toLowerCase().includes(searchLower) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        product.tags?.toLowerCase().includes(searchLower) ||
+        product.descricao?.toLowerCase().includes(searchLower)
       );
     }
 
     // Apply category filter
-    if (filters.category) {
-      filteredProducts = filteredProducts.filter(product =>
-        product.category.id === filters.category
-      );
+    if (filters.categoryId || filters.category) {
+      const categoryId = filters.categoryId || parseInt(filters.category || '0');
+      if (categoryId > 0) {
+        filteredProducts = filteredProducts.filter(product => product.fk_categoria_id === categoryId);
+      }
     }
 
     // Apply status filter
-    if (filters.status) {
-      filteredProducts = filteredProducts.filter(product =>
-        product.status === filters.status
-      );
+    if (filters.status !== undefined) {
+      filteredProducts = filteredProducts.filter(product => product.status === filters.status);
+    }
+
+    // Apply stock filter
+    if (filters.inStock !== undefined) {
+      if (filters.inStock) {
+        filteredProducts = filteredProducts.filter(product => product.estoque > 0);
+      } else {
+        filteredProducts = filteredProducts.filter(product => product.estoque === 0);
+      }
     }
 
     // Apply sorting
     filteredProducts.sort((a, b) => {
-      const aValue = a[sort.field as keyof Product] as any;
-      const bValue = b[sort.field as keyof Product] as any;
-      
-      if (sort.direction === 'asc') {
-        return aValue > bValue ? 1 : -1;
+      const { field, direction } = sort;
+      let aValue: string | number, bValue: string | number;
+
+      switch (field) {
+        case 'nome':
+        case 'name':
+          aValue = a.nome;
+          bValue = b.nome;
+          break;
+        case 'sku':
+          aValue = a.sku || '';
+          bValue = b.sku || '';
+          break;
+        case 'preco':
+        case 'price':
+          aValue = a.preco;
+          bValue = b.preco;
+          break;
+        case 'estoque':
+        case 'stock':
+          aValue = a.estoque;
+          bValue = b.estoque;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          aValue = a.nome;
+          bValue = b.nome;
+      }
+
+      if (direction === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 
@@ -157,102 +112,190 @@ export const productsService = {
   },
 
   // Get single product by ID
-  async getProduct(id: string): Promise<Product | null> {
+  async getProduct(id: number): Promise<Produto | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return mockProducts.find(product => product.id === id) || null;
+    
+    const product = mockProducts.find(p => p.id === id);
+    return product || null;
   },
 
   // Create new product
-  async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+  async createProduct(productData: Partial<Produto>): Promise<Produto> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const newProduct: Product = {
-      ...productData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date()
+
+    const newProduct: Produto = {
+      id: Math.max(...mockProducts.map(p => p.id)) + 1,
+      sku: productData.sku,
+      nome: productData.nome || '',
+      descricao: productData.descricao,
+      descricaoResumida: productData.descricaoResumida,
+      preco: productData.preco || 0,
+      medida: productData.medida || 'unidade',
+      estoque: productData.estoque || 0,
+      status: productData.status !== undefined ? productData.status : 1,
+      imagem: productData.imagem,
+      tags: productData.tags,
+      fk_categoria_id: productData.fk_categoria_id || 1
     };
 
     mockProducts.push(newProduct);
     return newProduct;
   },
 
-  // Update existing product
-  async updateProduct(id: string, productData: Partial<Product>): Promise<Product> {
+  // Update product
+  async updateProduct(id: number, updates: Partial<Produto>): Promise<Produto | null> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const productIndex = mockProducts.findIndex(product => product.id === id);
+
+    const productIndex = mockProducts.findIndex(p => p.id === id);
+
     if (productIndex === -1) {
-      throw new Error('Produto não encontrado');
+      return null;
     }
 
-    mockProducts[productIndex] = {
-      ...mockProducts[productIndex],
-      ...productData,
-      updatedAt: new Date()
+    const product = mockProducts[productIndex];
+    const updatedProduct: Produto = {
+      ...product,
+      ...updates,
+      id: product.id // Prevent ID changes
     };
 
-    return mockProducts[productIndex];
+    mockProducts[productIndex] = updatedProduct;
+    return updatedProduct;
   },
 
   // Delete product
-  async deleteProduct(id: string): Promise<void> {
+  async deleteProduct(id: number): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const productIndex = mockProducts.findIndex(product => product.id === id);
+
+    const productIndex = mockProducts.findIndex(p => p.id === id);
+
     if (productIndex === -1) {
-      throw new Error('Produto não encontrado');
+      return false;
     }
 
     mockProducts.splice(productIndex, 1);
+    return true;
   },
 
-  // Bulk actions
-  async bulkUpdateStatus(productIds: string[], status: Product['status']): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    productIds.forEach(id => {
-      const productIndex = mockProducts.findIndex(product => product.id === id);
-      if (productIndex !== -1) {
-        mockProducts[productIndex].status = status;
-        mockProducts[productIndex].updatedAt = new Date();
-      }
-    });
-  },
-
-  async bulkDelete(productIds: string[]): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    productIds.forEach(id => {
-      const productIndex = mockProducts.findIndex(product => product.id === id);
-      if (productIndex !== -1) {
-        mockProducts.splice(productIndex, 1);
-      }
-    });
-  },
-
-  // Get categories
-  async getCategories(): Promise<Category[]> {
+  // Get all categories
+  async getCategories(): Promise<Categoria[]> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return mockCategories.filter(category => category.isActive);
+    return [...mockCategories];
   },
 
-  // Create category
-  async createCategory(categoryData: Omit<Category, 'id'>): Promise<Category> {
-    await new Promise(resolve => setTimeout(resolve, 300));
+  // Get single category by ID
+  async getCategory(id: number): Promise<Categoria | null> {
+    await new Promise(resolve => setTimeout(resolve, 200));
     
-    const newCategory: Category = {
-      ...categoryData,
-      id: Date.now().toString()
+    const category = mockCategories.find(c => c.id === id);
+    return category || null;
+  },
+
+  // Create new category
+  async createCategory(categoryData: Partial<Categoria>): Promise<Categoria> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const newCategory: Categoria = {
+      id: Math.max(...mockCategories.map(c => c.id)) + 1,
+      nome: categoryData.nome || '',
+      descricao: categoryData.descricao,
+      estaAtiva: categoryData.estaAtiva !== undefined ? categoryData.estaAtiva : true
     };
 
     mockCategories.push(newCategory);
     return newCategory;
   },
 
-  // Get low stock products
-  async getLowStockProducts(threshold: number = 10): Promise<Product[]> {
+  // Update category
+  async updateCategory(id: number, updates: Partial<Categoria>): Promise<Categoria | null> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const categoryIndex = mockCategories.findIndex(c => c.id === id);
+
+    if (categoryIndex === -1) {
+      return null;
+    }
+
+    const category = mockCategories[categoryIndex];
+    const updatedCategory: Categoria = {
+      ...category,
+      ...updates,
+      id: category.id // Prevent ID changes
+    };
+
+    mockCategories[categoryIndex] = updatedCategory;
+    return updatedCategory;
+  },
+
+  // Delete category
+  async deleteCategory(id: number): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const categoryIndex = mockCategories.findIndex(c => c.id === id);
+
+    if (categoryIndex === -1) {
+      return false;
+    }
+
+    // Check if any products use this category
+    const productsInCategory = mockProducts.filter(p => p.fk_categoria_id === id);
+    if (productsInCategory.length > 0) {
+      return false; // Cannot delete category with products
+    }
+
+    mockCategories.splice(categoryIndex, 1);
+    return true;
+  },
+
+  // Toggle category active status
+  async toggleCategoryStatus(id: number): Promise<Categoria | null> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const category = await this.getCategory(id);
+    if (!category) {
+      return null;
+    }
+
+    return this.updateCategory(id, { estaAtiva: !category.estaAtiva });
+  },
+
+  // Get product statistics
+  async getProductStats(): Promise<{
+    total: number;
+    active: number;
+    outOfStock: number;
+    lowStock: number;
+    totalValue: number;
+  }> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return mockProducts.filter(product => product.stock <= threshold);
+
+    const stats = mockProducts.reduce(
+      (acc, product) => {
+        acc.total++;
+        if (product.status === 1) acc.active++;
+        if (product.estoque === 0) acc.outOfStock++;
+        if (product.estoque > 0 && product.estoque <= 10) acc.lowStock++;
+        acc.totalValue += product.preco * product.estoque;
+        return acc;
+      },
+      {
+        total: 0,
+        active: 0,
+        outOfStock: 0,
+        lowStock: 0,
+        totalValue: 0
+      }
+    );
+
+    return stats;
+  },
+
+  // Get low stock products
+  async getLowStockProducts(threshold: number = 10): Promise<Produto[]> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    return mockProducts.filter(product => 
+      product.estoque > 0 && product.estoque <= threshold && product.status === 1
+    );
   }
 };

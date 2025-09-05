@@ -1,43 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Card, LoadingSpinner } from '../ui';
 import { useAuth } from '../../context/AuthContext';
-import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
+import { servicoEntregadorPedidos } from '../../services/delivery/servicoEntregadorPedidos';
+import { useEntregadorPedidos } from '../../hooks/delivery/useEntregadorPedidos';
 import { DeliveryOrdersList } from './DeliveryOrdersList';
 import { DeliveryHistory } from './DeliveryHistory';
 
-interface DeliveryStats {
-  totalPendingOrders: number;
-  totalInRouteOrders: number;
-  totalDeliveredToday: number;
-  totalEarningsToday: number;
+interface EstatisticasEntregador {
+  totalPedidosPendentes: number;
+  totalPedidosRota: number;
+  totalEntregasHoje: number;
+  totalGanhosHoje: number;
 }
 
 export const DeliveryDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DeliveryStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'orders' | 'history'>('dashboard');
-
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      if (user?.id) {
-        const statsData = await deliveryOrderService.getDashboardStats(user.id);
-        setStats(statsData);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar estatísticas:', err);
-      setError('Erro ao carregar estatísticas do dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  // Use the new Portuguese-aligned hook
+  const {
+    estatisticas,
+    carregando,
+    erro,
+    atualizarPedidos
+  } = useEntregadorPedidos({
+    entregadorId: user?.id as number,
+    carregarAutomaticamente: true,
+    intervaloAtualizacao: 30000
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -53,7 +43,7 @@ export const DeliveryDashboard: React.FC = () => {
     return 'Boa noite';
   };
 
-  if (loading) {
+  if (carregando && !estatisticas) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -61,7 +51,7 @@ export const DeliveryDashboard: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (erro && !estatisticas) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -71,10 +61,10 @@ export const DeliveryDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Erro ao carregar dashboard</h3>
-              <p className="text-gray-600">{error}</p>
+              <p className="text-gray-600">{erro}</p>
             </div>
             <button
-              onClick={loadStats}
+              onClick={atualizarPedidos}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
             >
               Tentar novamente
@@ -91,7 +81,7 @@ export const DeliveryDashboard: React.FC = () => {
         {/* Header with greeting */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {getGreeting()}, {user?.name}!
+            {getGreeting()}, {user?.nome}!
           </h1>
           <p className="text-gray-600">
             Gerencie suas entregas e acompanhe seu desempenho
@@ -150,7 +140,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats?.totalPendingOrders || 0}
+                      {estatisticas?.totalPedidosPendentes || 0}
                     </div>
                     <div className="text-sm text-gray-600">Pedidos Pendentes</div>
                   </div>
@@ -168,7 +158,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats?.totalInRouteOrders || 0}
+                      {estatisticas?.totalPedidosRota || 0}
                     </div>
                     <div className="text-sm text-gray-600">Em Rota</div>
                   </div>
@@ -186,7 +176,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats?.totalDeliveredToday || 0}
+                      {estatisticas?.totalEntregasHoje || 0}
                     </div>
                     <div className="text-sm text-gray-600">Entregues Hoje</div>
                   </div>
@@ -204,7 +194,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <div className="text-2xl font-bold text-gray-900">
-                      {formatCurrency(stats?.totalEarningsToday || 0)}
+                      {formatCurrency(estatisticas?.totalGanhosHoje || 0)}
                     </div>
                     <div className="text-sm text-gray-600">Ganhos Hoje</div>
                   </div>
@@ -221,13 +211,13 @@ export const DeliveryDashboard: React.FC = () => {
                     onClick={() => setActiveTab('orders')}
                     className="block w-full bg-yellow-50 text-yellow-800 border border-yellow-200 px-4 py-3 rounded-lg hover:bg-yellow-100 transition-colors text-center font-medium"
                   >
-                    Ver Pedidos Pendentes ({stats?.totalPendingOrders || 0})
+                    Ver Pedidos Pendentes ({estatisticas?.totalPedidosPendentes || 0})
                   </button>
                   <button
                     onClick={() => setActiveTab('orders')}
                     className="block w-full bg-blue-50 text-blue-800 border border-blue-200 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors text-center font-medium"
                   >
-                    Ver Pedidos em Rota ({stats?.totalInRouteOrders || 0})
+                    Ver Pedidos em Rota ({estatisticas?.totalPedidosRota || 0})
                   </button>
                   <button
                     onClick={() => setActiveTab('history')}
@@ -247,7 +237,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Telefone:</span>
-                    <span className="font-medium">{user?.phone || 'Não informado'}</span>
+                    <span className="font-medium">{user?.numeroCelular || 'Não informado'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Status:</span>

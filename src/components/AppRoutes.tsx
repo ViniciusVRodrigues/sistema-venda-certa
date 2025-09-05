@@ -55,9 +55,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} replace />;
   }
   
-  if (requiredRole && user?.role !== requiredRole) {
-    const fallbackRoute = user?.role === 'admin' ? '/admin' : 
-                          user?.role === 'delivery' ? '/delivery' : '/';
+  if (requiredRole && user?.cargo !== requiredRole) {
+    const fallbackRoute = user?.cargo === 'admin' ? '/admin' : 
+                          user?.cargo === 'delivery' ? '/delivery' : '/';
     return <Navigate to={fallbackRoute} replace />;
   }
   
@@ -74,8 +74,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/login"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.role === 'admin' ? '/admin' : 
-                          user?.role === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
+                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
           ) : (
             <LoginPage />
           )
@@ -85,8 +85,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/register"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.role === 'admin' ? '/admin' : 
-                          user?.role === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
+                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
           ) : (
             <RegisterPage />
           )

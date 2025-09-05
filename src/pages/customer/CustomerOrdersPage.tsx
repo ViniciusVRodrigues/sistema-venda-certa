@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from '../../components/ui';
 import { useCustomerOrders } from '../../hooks/customer/useCustomerOrders';
-import type { Order } from '../../types';
+import type { Pedido } from '../../types';
 
 export const CustomerOrdersPage: React.FC = () => {
   const {
@@ -18,7 +18,7 @@ export const CustomerOrdersPage: React.FC = () => {
     getStatusInfo
   } = useCustomerOrders();
 
-  const [showOrderDetails, setShowOrderDetails] = useState<string | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState<number | null>(null);
 
   const statusOptions = getOrderStatusOptions();
 
@@ -39,22 +39,22 @@ export const CustomerOrdersPage: React.FC = () => {
     }).format(date);
   };
 
-  const formatAddress = (order: Order) => {
-    const addr = order.deliveryAddress;
-    return `${addr.street}, ${addr.number}, ${addr.neighborhood}, ${addr.city} - ${addr.state}`;
+  const formatAddress = (order: Pedido) => {
+    // Como Pedido não tem deliveryAddress diretamente, vamos simplificar
+    return `Endereço #${order.fk_endereco_id}`;
   };
 
-  const getPaymentStatusInfo = (status: Order['paymentStatus']) => {
-    const statusMap = {
-      pending: { label: 'Pendente', color: 'text-yellow-800', bgColor: 'bg-yellow-100' },
-      paid: { label: 'Pago', color: 'text-green-800', bgColor: 'bg-green-100' },
-      failed: { label: 'Falhou', color: 'text-red-800', bgColor: 'bg-red-100' },
-      refunded: { label: 'Reembolsado', color: 'text-blue-800', bgColor: 'bg-blue-100' }
+  const getPaymentStatusInfo = (status: Pedido['statusPagamento']) => {
+    const statusMap: Record<number, { label: string; color: string; bgColor: string }> = {
+      0: { label: 'Pendente', color: 'text-yellow-800', bgColor: 'bg-yellow-100' },
+      1: { label: 'Pago', color: 'text-green-800', bgColor: 'bg-green-100' },
+      2: { label: 'Falhou', color: 'text-red-800', bgColor: 'bg-red-100' },
+      3: { label: 'Reembolsado', color: 'text-blue-800', bgColor: 'bg-blue-100' }
     };
-    return statusMap[status] || { label: status, color: 'text-gray-800', bgColor: 'bg-gray-100' };
+    return statusMap[status] || { label: 'Desconhecido', color: 'text-gray-800', bgColor: 'bg-gray-100' };
   };
 
-  const toggleOrderDetails = (orderId: string) => {
+  const toggleOrderDetails = (orderId: number) => {
     setShowOrderDetails(showOrderDetails === orderId ? null : orderId);
   };
 
@@ -121,9 +121,12 @@ export const CustomerOrdersPage: React.FC = () => {
             
             <Select
               label="Status"
-              value={filters.status || 'all'}
-              onChange={(e) => updateFilters({ status: e.target.value === 'all' ? undefined : e.target.value })}
-              options={statusOptions}
+              value={filters.status?.toString() || 'all'}
+              onChange={(e) => updateFilters({ status: e.target.value === 'all' ? undefined : parseInt(e.target.value) })}
+              options={[
+                { value: 'all', label: 'Todos os Status' },
+                ...statusOptions.map(opt => ({ value: opt.value.toString(), label: opt.label }))
+              ]}
             />
             
             <div className="flex items-end">
@@ -196,7 +199,7 @@ export const CustomerOrdersPage: React.FC = () => {
             ) : (
               orders.map(order => {
                 const statusInfo = getStatusInfo(order.status);
-                const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
+                const paymentInfo = getPaymentStatusInfo(order.statusPagamento);
                 const isExpanded = showOrderDetails === order.id;
 
                 return (
@@ -208,7 +211,7 @@ export const CustomerOrdersPage: React.FC = () => {
                             Pedido #{order.id}
                           </h3>
                           <p className="text-sm text-gray-600">
-                            {formatDate(order.createdAt)}
+                            {order.estimativaEntrega ? formatDate(order.estimativaEntrega) : 'Data não definida'}
                           </p>
                         </div>
                         <div className="flex space-x-2">
@@ -234,20 +237,20 @@ export const CustomerOrdersPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">Entrega</p>
-                          <p className="text-sm text-gray-600">{order.deliveryMethod.name}</p>
+                          <p className="text-sm text-gray-600">Método #{order.fk_metodoEntrega_id}</p>
                           <p className="text-sm text-gray-600">
-                            {order.estimatedDelivery ? formatDate(order.estimatedDelivery).split(' ')[0] : 'A definir'}
+                            {order.estimativaEntrega ? formatDate(order.estimativaEntrega).split(' ')[0] : 'A definir'}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">Pagamento</p>
-                          <p className="text-sm text-gray-600">{order.paymentMethod.name}</p>
+                          <p className="text-sm text-gray-600">Método #{order.fk_metodoPagamento_id}</p>
                         </div>
                       </div>
 
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-gray-600">
-                          {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                          Subtotal: R$ {order.subtotal.toFixed(2)}
                         </p>
                         <Button
                           variant="outline"
@@ -271,31 +274,18 @@ export const CustomerOrdersPage: React.FC = () => {
                     {isExpanded && (
                       <div className="border-t border-gray-200 p-6 bg-gray-50">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {/* Items */}
+                          {/* Order Summary */}
                           <div>
-                            <h4 className="font-medium text-gray-900 mb-3">Itens do Pedido</h4>
+                            <h4 className="font-medium text-gray-900 mb-3">Resumo do Pedido</h4>
                             <div className="space-y-3">
-                              {order.items.map(item => (
-                                <div key={item.id} className="flex justify-between">
-                                  <div>
-                                    <p className="font-medium">{item.product.name}</p>
-                                    <p className="text-sm text-gray-600">
-                                      {item.quantity} {item.product.unit} × {formatCurrency(item.price)}
-                                    </p>
-                                  </div>
-                                  <p className="font-medium">
-                                    {formatCurrency(item.quantity * item.price)}
-                                  </p>
-                                </div>
-                              ))}
                               <div className="border-t pt-3">
                                 <div className="flex justify-between text-sm">
                                   <span>Subtotal:</span>
-                                  <span>{formatCurrency(order.total - order.deliveryFee)}</span>
+                                  <span>{formatCurrency(order.subtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                  <span>Entrega:</span>
-                                  <span>{formatCurrency(order.deliveryFee)}</span>
+                                  <span>Taxa de Entrega:</span>
+                                  <span>{formatCurrency(order.taxaEntrega)}</span>
                                 </div>
                                 <div className="flex justify-between font-bold">
                                   <span>Total:</span>
@@ -305,33 +295,31 @@ export const CustomerOrdersPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Delivery and Timeline */}
+                          {/* Delivery and Additional Info */}
                           <div>
                             <h4 className="font-medium text-gray-900 mb-3">Endereço de Entrega</h4>
                             <p className="text-sm text-gray-600 mb-4">
                               {formatAddress(order)}
                             </p>
 
-                            <h4 className="font-medium text-gray-900 mb-3">Histórico do Pedido</h4>
+                            <h4 className="font-medium text-gray-900 mb-3">Informações Adicionais</h4>
                             <div className="space-y-2">
-                              {order.timeline.map((event) => (
-                                <div key={event.id} className="flex items-center text-sm">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                                  <div className="flex-1">
-                                    <p className="font-medium">{event.description}</p>
-                                    <p className="text-gray-600">
-                                      {formatDate(event.timestamp)}
-                                      {event.userName && ` - ${event.userName}`}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
+                              <div className="text-sm">
+                                <p><strong>Status:</strong> {statusInfo.label}</p>
+                                <p><strong>Pagamento:</strong> {paymentInfo.label}</p>
+                                {order.estimativaEntrega && (
+                                  <p><strong>Previsão:</strong> {formatDate(order.estimativaEntrega)}</p>
+                                )}
+                                {order.dataEntrega && (
+                                  <p><strong>Entregue em:</strong> {formatDate(order.dataEntrega)}</p>
+                                )}
+                              </div>
                             </div>
 
-                            {order.notes && (
+                            {order.anotacoes && (
                               <div className="mt-4">
                                 <h4 className="font-medium text-gray-900 mb-2">Observações</h4>
-                                <p className="text-sm text-gray-600">{order.notes}</p>
+                                <p className="text-sm text-gray-600">{order.anotacoes}</p>
                               </div>
                             )}
                           </div>

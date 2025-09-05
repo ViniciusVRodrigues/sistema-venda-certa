@@ -4,7 +4,7 @@ import { Button, Card, Input, LoadingSpinner, Modal } from '../../components/ui'
 import { useCheckout, useCreateOrder } from '../../hooks/customer/useCheckout';
 import { useAddresses } from '../../hooks/customer/useAddresses';
 import { useCart } from '../../context/CartContext';
-import type { Address } from '../../types';
+import type { Endereco } from '../../types';
 import type { CreateAddressData } from '../../services/customer/addressService';
 
 export const CheckoutPage: React.FC = () => {
@@ -13,6 +13,20 @@ export const CheckoutPage: React.FC = () => {
   const { addresses, createAddress } = useAddresses();
   const { createOrder, loading: orderLoading, error: orderError } = useCreateOrder();
   
+  // Convert Endereco to Address for compatibility with useCheckout
+  const convertEnderecoToAddress = (endereco: Endereco) => ({
+    id: endereco.id,
+    street: endereco.rua,
+    number: endereco.numero,
+    complement: endereco.complemento,
+    neighborhood: endereco.bairro,
+    city: endereco.cidade,
+    state: endereco.estado,
+    zipCode: endereco.cep,
+    isDefault: endereco.favorito,
+    customerId: endereco.fk_usuario_id
+  });
+
   const {
     steps,
     currentStep,
@@ -37,14 +51,15 @@ export const CheckoutPage: React.FC = () => {
 
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [newAddressForm, setNewAddressForm] = useState<CreateAddressData>({
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    isDefault: false
+    rua: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    cep: '',
+    favorito: false,
+    fk_usuario_id: 1
   });
   const [submittingOrder, setSubmittingOrder] = useState(false);
 
@@ -62,25 +77,27 @@ export const CheckoutPage: React.FC = () => {
     }
   };
 
-  const handleAddressSelect = (address: Address) => {
-    setDeliveryAddress(address);
+  const handleAddressSelect = (address: Endereco) => {
+    setDeliveryAddress(convertEnderecoToAddress(address));
+    clearError();
   };
 
   const handleCreateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const newAddress = await createAddress(newAddressForm);
-      setDeliveryAddress(newAddress);
+      setDeliveryAddress(convertEnderecoToAddress(newAddress));
       setShowAddressModal(false);
       setNewAddressForm({
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        isDefault: false
+        rua: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        favorito: false,
+        fk_usuario_id: 1
       });
     } catch {
       // Error handling is done by the hook
@@ -240,15 +257,15 @@ export const CheckoutPage: React.FC = () => {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium">
-                              {address.street}, {address.number}
-                              {address.complement && `, ${address.complement}`}
+                              {address.rua}, {address.numero}
+                              {address.complemento && `, ${address.complemento}`}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {address.neighborhood}, {address.city} - {address.state}, {address.zipCode}
+                              {address.bairro}, {address.cidade} - {address.estado}, {address.cep}
                             </p>
-                            {address.isDefault && (
+                            {address.favorito && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                Padrão
+                                Favorito
                               </span>
                             )}
                           </div>
@@ -516,44 +533,44 @@ export const CheckoutPage: React.FC = () => {
               <div className="md:col-span-2">
                 <Input
                   label="Rua"
-                  value={newAddressForm.street}
-                  onChange={(e) => setNewAddressForm(prev => ({ ...prev, street: e.target.value }))}
+                  value={newAddressForm.rua}
+                  onChange={(e) => setNewAddressForm(prev => ({ ...prev, rua: e.target.value }))}
                   required
                 />
               </div>
               
               <Input
                 label="Número"
-                value={newAddressForm.number}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, number: e.target.value }))}
+                value={newAddressForm.numero}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, numero: e.target.value }))}
                 required
               />
               
               <Input
                 label="Complemento"
-                value={newAddressForm.complement || ''}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, complement: e.target.value }))}
+                value={newAddressForm.complemento || ''}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, complemento: e.target.value }))}
                 placeholder="Apto, bloco, etc."
               />
               
               <Input
                 label="Bairro"
-                value={newAddressForm.neighborhood}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, neighborhood: e.target.value }))}
+                value={newAddressForm.bairro}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, bairro: e.target.value }))}
                 required
               />
               
               <Input
                 label="Cidade"
-                value={newAddressForm.city}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, city: e.target.value }))}
+                value={newAddressForm.cidade}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, cidade: e.target.value }))}
                 required
               />
               
               <Input
                 label="Estado"
-                value={newAddressForm.state}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, state: e.target.value }))}
+                value={newAddressForm.estado}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, estado: e.target.value }))}
                 maxLength={2}
                 placeholder="SP"
                 required
@@ -561,8 +578,8 @@ export const CheckoutPage: React.FC = () => {
               
               <Input
                 label="CEP"
-                value={newAddressForm.zipCode}
-                onChange={(e) => setNewAddressForm(prev => ({ ...prev, zipCode: e.target.value }))}
+                value={newAddressForm.cep}
+                onChange={(e) => setNewAddressForm(prev => ({ ...prev, cep: e.target.value }))}
                 placeholder="12345-678"
                 required
               />
