@@ -1,4 +1,4 @@
-import { mockUsuarios, mockPedidos, mockProdutosPedido, mockProdutos, mockEnderecos } from '../services/mock/databaseMockData';
+import { mockUsuarios } from '../services/mock/databaseMockData';
 import { servicoEntregadorPedidos } from '../services/delivery/servicoEntregadorPedidos';
 
 // Demo da funcionalidade de entregador com dados mock

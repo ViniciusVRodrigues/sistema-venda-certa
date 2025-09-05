@@ -1,9 +1,9 @@
-import type { Pedido, Usuario, ProdutoPedido, AtualizacaoPedido } from '../../types';
-import { mockPedidos, mockUsuarios, mockProdutosPedido, mockAtualizacoesPedido } from '../mock/databaseMockData';
+import type { Pedido, ProdutoPedido, AtualizacaoPedido } from '../../types';
+import { mockPedidos, mockProdutosPedido, mockAtualizacoesPedido } from '../mock/databaseMockData';
 
 // Use database schema data
 const mockOrders: Pedido[] = [...mockPedidos];
-const mockUsers: Usuario[] = [...mockUsuarios];
+// const mockUsers: Usuario[] = [...mockUsuarios];
 const mockOrderItems: ProdutoPedido[] = [...mockProdutosPedido];
 const mockOrderUpdates: AtualizacaoPedido[] = [...mockAtualizacoesPedido];
 

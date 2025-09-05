@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, Select } from '../../../ui';
-import type { Customer, Address } from '../../../../types';
+import type { Customer, Endereco } from '../../../../types';
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export interface CustomerFormData {
   role: 'customer';
   isVip: boolean;
   isBlocked: boolean;
-  addresses: Address[];
+  addresses: Endereco[];
 }
 
 export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
@@ -39,42 +39,42 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Address form for the first (default) address
-  const [addressData, setAddressData] = useState<Omit<Address, 'id'>>({
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    isDefault: true
+  const [addressData, setAddressData] = useState<Omit<Endereco, 'id' | 'fk_usuario_id'>>({
+    rua: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    cep: '',
+    favorito: true
   });
 
   // Update form data when customer changes (edit mode)
   useEffect(() => {
     if (customer) {
       setFormData({
-        name: customer.name,
+        name: customer.nome,
         email: customer.email,
-        phone: customer.phone || '',
-        role: customer.role,
-        isVip: customer.isVip,
-        isBlocked: customer.isBlocked,
-        addresses: customer.addresses
+        phone: customer.numeroCelular || '',
+        role: 'customer',
+        isVip: customer.isVip || false,
+        isBlocked: customer.isBlocked || false,
+        addresses: customer.addresses || []
       });
       
       // Set the first address if available
-      if (customer.addresses.length > 0) {
+      if (customer.addresses && customer.addresses.length > 0) {
         const address = customer.addresses[0];
         setAddressData({
-          street: address.street,
-          number: address.number,
-          complement: address.complement || '',
-          neighborhood: address.neighborhood,
-          city: address.city,
-          state: address.state,
-          zipCode: address.zipCode,
-          isDefault: address.isDefault
+          rua: address.rua,
+          numero: address.numero,
+          complemento: address.complemento || '',
+          bairro: address.bairro,
+          cidade: address.cidade,
+          estado: address.estado,
+          cep: address.cep,
+          favorito: address.favorito
         });
       }
     } else {
@@ -89,14 +89,14 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         addresses: []
       });
       setAddressData({
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        isDefault: true
+        rua: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        favorito: true
       });
     }
     setErrors({});
@@ -121,23 +121,23 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     );
     
     if (hasAnyAddressField) {
-      if (!addressData.street.trim()) {
-        newErrors.street = 'Rua é obrigatória';
+      if (!addressData.rua.trim()) {
+        newErrors.rua = 'Rua é obrigatória';
       }
-      if (!addressData.number.trim()) {
-        newErrors.number = 'Número é obrigatório';
+      if (!addressData.numero.trim()) {
+        newErrors.numero = 'Número é obrigatório';
       }
-      if (!addressData.neighborhood.trim()) {
-        newErrors.neighborhood = 'Bairro é obrigatório';
+      if (!addressData.bairro.trim()) {
+        newErrors.bairro = 'Bairro é obrigatório';
       }
-      if (!addressData.city.trim()) {
-        newErrors.city = 'Cidade é obrigatória';
+      if (!addressData.cidade.trim()) {
+        newErrors.cidade = 'Cidade é obrigatória';
       }
-      if (!addressData.state.trim()) {
-        newErrors.state = 'Estado é obrigatório';
+      if (!addressData.estado.trim()) {
+        newErrors.estado = 'Estado é obrigatório';
       }
-      if (!addressData.zipCode.trim()) {
-        newErrors.zipCode = 'CEP é obrigatório';
+      if (!addressData.cep.trim()) {
+        newErrors.cep = 'CEP é obrigatório';
       }
     }
 
@@ -154,7 +154,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
 
     try {
       // Prepare addresses array
-      const addresses: Address[] = [];
+      const addresses: Endereco[] = [];
       
       // Add address if any field is filled
       const hasAnyAddressField = Object.values(addressData).some(value => 
@@ -163,7 +163,8 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
       
       if (hasAnyAddressField) {
         addresses.push({
-          id: customer?.addresses[0]?.id || Date.now().toString(),
+          id: customer?.addresses?.[0]?.id || Date.now(),
+          fk_usuario_id: customer?.id || 0,
           ...addressData
         });
       }
@@ -180,19 +181,19 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof CustomerFormData, value: any) => {
+  const handleInputChange = (field: keyof CustomerFormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+    if (errors[field as string]) {
+      setErrors(prev => ({ ...prev, [field as string]: '' }));
     }
   };
 
   const handleAddressChange = (field: keyof typeof addressData, value: string) => {
     setAddressData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+    if (errors[field as string]) {
+      setErrors(prev => ({ ...prev, [field as string]: '' }));
     }
   };
 
@@ -276,18 +277,18 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             <div className="md:col-span-2">
               <Input
                 label="Rua"
-                value={addressData.street}
-                onChange={(e) => handleAddressChange('street', e.target.value)}
-                error={errors.street}
+                value={addressData.rua}
+                onChange={(e) => handleAddressChange('rua', e.target.value)}
+                error={errors.rua}
                 placeholder="Nome da rua"
               />
             </div>
             <div>
               <Input
                 label="Número"
-                value={addressData.number}
-                onChange={(e) => handleAddressChange('number', e.target.value)}
-                error={errors.number}
+                value={addressData.numero}
+                onChange={(e) => handleAddressChange('numero', e.target.value)}
+                error={errors.numero}
                 placeholder="123"
               />
             </div>
@@ -297,17 +298,17 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             <div>
               <Input
                 label="Complemento"
-                value={addressData.complement}
-                onChange={(e) => handleAddressChange('complement', e.target.value)}
+                value={addressData.complemento}
+                onChange={(e) => handleAddressChange('complemento', e.target.value)}
                 placeholder="Apto, bloco, etc."
               />
             </div>
             <div>
               <Input
                 label="Bairro"
-                value={addressData.neighborhood}
-                onChange={(e) => handleAddressChange('neighborhood', e.target.value)}
-                error={errors.neighborhood}
+                value={addressData.bairro}
+                onChange={(e) => handleAddressChange('bairro', e.target.value)}
+                error={errors.bairro}
                 placeholder="Nome do bairro"
               />
             </div>
@@ -317,18 +318,18 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             <div>
               <Input
                 label="Cidade"
-                value={addressData.city}
-                onChange={(e) => handleAddressChange('city', e.target.value)}
-                error={errors.city}
+                value={addressData.cidade}
+                onChange={(e) => handleAddressChange('cidade', e.target.value)}
+                error={errors.cidade}
                 placeholder="Nome da cidade"
               />
             </div>
             <div>
               <Select
                 label="Estado"
-                value={addressData.state}
-                onChange={(e) => handleAddressChange('state', e.target.value)}
-                error={errors.state}
+                value={addressData.estado}
+                onChange={(e) => handleAddressChange('estado', e.target.value)}
+                error={errors.estado}
                 options={[
                   { value: '', label: 'Selecione o estado' },
                   ...brazilianStates
@@ -338,9 +339,9 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             <div>
               <Input
                 label="CEP"
-                value={addressData.zipCode}
-                onChange={(e) => handleAddressChange('zipCode', e.target.value)}
-                error={errors.zipCode}
+                value={addressData.cep}
+                onChange={(e) => handleAddressChange('cep', e.target.value)}
+                error={errors.cep}
                 placeholder="00000-000"
               />
             </div>

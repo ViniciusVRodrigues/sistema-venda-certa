@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, LoadingSpinner } from '../ui';
 import { useAuth } from '../../context/AuthContext';
-import { servicoEntregadorPedidos } from '../../services/delivery/servicoEntregadorPedidos';
+// import { servicoEntregadorPedidos } from '../../services/delivery/servicoEntregadorPedidos';
 import { useEntregadorPedidos } from '../../hooks/delivery/useEntregadorPedidos';
 import { DeliveryOrdersList } from './DeliveryOrdersList';
 import { DeliveryHistory } from './DeliveryHistory';
 
-interface EstatisticasEntregador {
-  totalPedidosPendentes: number;
-  totalPedidosRota: number;
-  totalEntregasHoje: number;
-  totalGanhosHoje: number;
-}
+// interface EstatisticasEntregador {
+//   totalPedidosPendentes: number;
+//   totalPedidosRota: number;
+//   totalEntregasHoje: number;
+//   totalGanhosHoje: number;
+// }
 
 export const DeliveryDashboard: React.FC = () => {
   const { user } = useAuth();

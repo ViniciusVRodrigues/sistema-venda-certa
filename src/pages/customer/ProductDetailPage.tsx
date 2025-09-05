@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Button, Badge, Card } from '../../components/ui';
 import { useCart } from '../../context/CartContext';
 import { useProductDetails } from '../../hooks/customer/useProduct';
-import type { Produto } from '../../types';
+// import type { Produto } from '../../types';
 
 // Rating Stars Component
 interface RatingStarsProps {
