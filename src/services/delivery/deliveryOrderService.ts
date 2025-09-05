@@ -1,4 +1,12 @@
-import type { Pedido, Delivery } from '../../types';
+import type { Pedido, Endereco, Usuario, ProdutoPedido, Produto, MetodoEntrega } from '../../types';
+import { 
+  mockPedidos, 
+  mockEnderecos, 
+  mockUsuarios, 
+  mockProdutosPedido, 
+  mockProdutos,
+  mockMetodosEntrega
+} from '../mock/databaseMockData';
 
 interface DeliveryStats {
   totalPendingOrders: number;
@@ -7,8 +15,22 @@ interface DeliveryStats {
   totalEarningsToday: number;
 }
 
+interface EstatisticasEntrega {
+  totalPedidosPendentes: number;
+  totalPedidosRota: number;
+  totalEntregasHoje: number;
+  totalGanhosHoje: number;
+}
+
+export interface PedidoCompleto extends Pedido {
+  endereco?: Endereco;
+  cliente?: Usuario;
+  produtos?: Array<ProdutoPedido & { produto?: Produto }>;
+  metodoEntrega?: MetodoEntrega;
+}
+
 interface DeliveryOrdersResponse {
-  orders: Pedido[];
+  orders: PedidoCompleto[];
   pagination: {
     page: number;
     pageSize: number;
@@ -17,69 +39,18 @@ interface DeliveryOrdersResponse {
   };
 }
 
-// Mock delivery driver
-const mockDeliveryDriver: Delivery = {
-  id: 1,
-  nome: 'João Silva',
-  email: 'delivery@test.com',
-  cargo: 'delivery',
-  numeroCelular: '(11) 99999-9999',
-  status: 1,
-  totalPedidos: 0,
-  totalGasto: 0,
-  entregasFeitas: 45,
-  nota: 4.8,
-  vehicle: 'Moto Honda CG 160',
-  assignedOrders: []
-};
+interface RespostaPedidosEntrega {
+  pedidos: Pedido[];
+  paginacao: {
+    pagina: number;
+    tamanhoPagina: number;
+    total: number;
+    totalPaginas: number;
+  };
+}
 
 // Mock orders assigned to delivery driver
-const mockOrders: Pedido[] = [
-  {
-    id: 1,
-    status: 2, // enviado
-    total: 85.50,
-    subtotal: 75.50,
-    taxaEntrega: 10.00,
-    statusPagamento: 1,
-    anotacoes: 'Entregar no portão da frente',
-    estimativaEntrega: new Date('2024-03-15T18:00:00'),
-    fk_entregador_id: 1,
-    fk_metodoPagamento_id: 1,
-    fk_usuario_id: 101,
-    fk_metodoEntrega_id: 1,
-    fk_endereco_id: 201
-  },
-  {
-    id: 2,
-    status: 1, // processando
-    total: 42.30,
-    subtotal: 35.30,
-    taxaEntrega: 7.00,
-    statusPagamento: 1,
-    estimativaEntrega: new Date('2024-03-15T19:30:00'),
-    fk_entregador_id: 1,
-    fk_metodoPagamento_id: 2,
-    fk_usuario_id: 102,
-    fk_metodoEntrega_id: 1,
-    fk_endereco_id: 202
-  },
-  {
-    id: 3,
-    status: 3, // entregue
-    total: 156.80,
-    subtotal: 146.80,
-    taxaEntrega: 10.00,
-    statusPagamento: 1,
-    dataEntrega: new Date('2024-03-15T12:45:00'),
-    estimativaEntrega: new Date('2024-03-15T12:00:00'),
-    fk_entregador_id: 1,
-    fk_metodoPagamento_id: 1,
-    fk_usuario_id: 103,
-    fk_metodoEntrega_id: 1,
-    fk_endereco_id: 203
-  }
-];
+const mockOrders: Pedido[] = mockPedidos;
 
 class DeliveryOrderService {
   private delay(ms: number): Promise<void> {
@@ -96,22 +67,22 @@ class DeliveryOrderService {
     const driverOrders = mockOrders.filter(order => order.fk_entregador_id === driverId);
     
     const totalPendingOrders = driverOrders.filter(order => 
-      order.status === 1 || order.status === 0 // processando ou recebido
+      order.status === 0 || order.status === 1 || order.status === 2 // recebido, processando
     ).length;
     
     const totalInRouteOrders = driverOrders.filter(order => 
-      order.status === 2 // enviado
+      order.status === 3 // enviado
     ).length;
     
     const totalDeliveredToday = driverOrders.filter(order => 
-      order.status === 3 && // entregue
+      order.status === 4 && // entregue
       order.dataEntrega &&
       order.dataEntrega >= today
     ).length;
     
     const totalEarningsToday = driverOrders
       .filter(order => 
-        order.status === 3 &&
+        order.status === 4 &&
         order.dataEntrega &&
         order.dataEntrega >= today
       )
@@ -139,12 +110,12 @@ class DeliveryOrderService {
     if (filters.status && filters.status !== 'all') {
       if (filters.status === 'pending') {
         filteredOrders = filteredOrders.filter(order => 
-          order.status === 0 || order.status === 1 // recebido ou processando
+          order.status === 0 || order.status === 1 || order.status === 2 // recebido, processando
         );
       } else if (filters.status === 'in_route') {
-        filteredOrders = filteredOrders.filter(order => order.status === 2); // enviado
+        filteredOrders = filteredOrders.filter(order => order.status === 3); // enviado
       } else if (filters.status === 'delivered') {
-        filteredOrders = filteredOrders.filter(order => order.status === 3); // entregue
+        filteredOrders = filteredOrders.filter(order => order.status === 4); // entregue
       }
     }
     
@@ -157,25 +128,67 @@ class DeliveryOrderService {
       );
     }
     
-    // Sort by estimated delivery (newest first)
+    // Sort by status priority and then by estimated delivery
     filteredOrders.sort((a, b) => {
+      // Priority order: 0,1,2 (pending), 3 (in_route), 4 (delivered), 5 (cancelled)
+      const statusPriority = { 0: 1, 1: 1, 2: 1, 3: 2, 4: 3, 5: 4 };
+      const aPriority = statusPriority[a.status as keyof typeof statusPriority] || 5;
+      const bPriority = statusPriority[b.status as keyof typeof statusPriority] || 5;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // If same priority, sort by estimated delivery (earliest first for pending/in_route, newest first for delivered)
       const aDate = a.estimativaEntrega?.getTime() || 0;
       const bDate = b.estimativaEntrega?.getTime() || 0;
-      return bDate - aDate;
+      
+      if (aPriority <= 2) { // pending or in_route - earliest first
+        return aDate - bDate;
+      } else { // delivered or cancelled - newest first
+        return bDate - aDate;
+      }
     });
-    
+
+    // Enrich orders with related data
+    const enrichedOrders: PedidoCompleto[] = filteredOrders.map(order => {
+      // Get endereco
+      const endereco = mockEnderecos.find(e => e.id === order.fk_endereco_id);
+      
+      // Get cliente
+      const cliente = mockUsuarios.find(u => u.id === order.fk_usuario_id);
+      
+      // Get produtos
+      const produtosPedido = mockProdutosPedido.filter(pp => pp.fk_pedido_id === order.id);
+      const produtos = produtosPedido.map(pp => ({
+        ...pp,
+        produto: mockProdutos.find(p => p.id === pp.fk_produto_id)
+      }));
+      
+      // Get método de entrega
+      const metodoEntrega = mockMetodosEntrega.find(me => me.id === order.fk_metodoEntrega_id);
+      
+      return {
+        ...order,
+        endereco,
+        cliente,
+        produtos,
+        metodoEntrega
+      };
+    });
+
     // Apply pagination
     const startIndex = (pagination.page - 1) * pagination.pageSize;
     const endIndex = startIndex + pagination.pageSize;
-    const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+    const paginatedOrders = enrichedOrders.slice(startIndex, endIndex);
     
     return {
       orders: paginatedOrders,
       pagination: {
         page: pagination.page,
         pageSize: pagination.pageSize,
-        total: filteredOrders.length,
-        totalPages: Math.ceil(filteredOrders.length / pagination.pageSize)
+        total: enrichedOrders.length,
+        totalPages: Math.ceil(enrichedOrders.length / pagination.pageSize)
       }
     };
   }
@@ -226,14 +239,74 @@ class DeliveryOrderService {
     }
 
     return order;
-  }  // Get delivery history for driver
+  }
+
+  // Métodos em português para compatibilidade
+  async obterEstatisticasDashboard(entregadorId: number): Promise<EstatisticasEntrega> {
+    const stats = await this.getDeliveryStats(entregadorId);
+    
+    // Converter nomes das propriedades
+    return {
+      totalPedidosPendentes: stats.totalPendingOrders,
+      totalPedidosRota: stats.totalInRouteOrders,
+      totalEntregasHoje: stats.totalDeliveredToday,
+      totalGanhosHoje: stats.totalEarningsToday
+    };
+  }
+
+  async obterPedidos(
+    entregadorId: number,
+    filtros: { status?: string; busca?: string } = {},
+    paginacao: { pagina: number; tamanhoPagina: number } = { pagina: 1, tamanhoPagina: 10 }
+  ): Promise<RespostaPedidosEntrega> {
+    // Converter filtros
+    const filters = {
+      status: filtros.status,
+      search: filtros.busca
+    };
+    
+    // Converter paginação
+    const pagination = {
+      page: paginacao.pagina,
+      pageSize: paginacao.tamanhoPagina
+    };
+    
+    const response = await this.getOrders(entregadorId, filters, pagination);
+    
+    // Converter resposta
+    return {
+      pedidos: response.orders,
+      paginacao: {
+        pagina: response.pagination.page,
+        tamanhoPagina: response.pagination.pageSize,
+        total: response.pagination.total,
+        totalPaginas: response.pagination.totalPages
+      }
+    };
+  }
+
+  async obterPedidoPorId(pedidoId: number): Promise<Pedido | null> {
+    return this.getOrderById(pedidoId);
+  }
+
+  async atualizarStatusPedido(
+    pedidoId: number,
+    novoStatus: 3 | 4, // enviado ou entregue
+    anotacoes?: string
+  ): Promise<Pedido> {
+    // Mapear status: 3 -> 2 (enviado), 4 -> 3 (entregue)
+    const mappedStatus = novoStatus === 3 ? 2 : 3;
+    return this.updateOrderStatus(pedidoId, mappedStatus as 2 | 3, anotacoes);
+  }
+
+  // Get delivery history for driver
   async getDeliveryHistory(driverId: number): Promise<Pedido[]> {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     return mockOrders
       .filter(order => 
         order.fk_entregador_id === driverId &&
-        order.status === 3 // entregue
+        order.status === 4 // entregue
       )
       .sort((a, b) => {
         const aDate = a.dataEntrega?.getTime() || 0;

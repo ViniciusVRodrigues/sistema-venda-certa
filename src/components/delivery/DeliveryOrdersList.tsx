@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, LoadingSpinner, Badge, Modal, Button, Input, Select } from '../ui';
 import { useAuth } from '../../context/AuthContext';
-import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
+import { deliveryOrderService, type PedidoCompleto } from '../../services/delivery/deliveryOrderService';
 import type { Pedido } from '../../types';
 
 export const DeliveryOrdersList: React.FC = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Pedido[]>([]);
+  const [orders, setOrders] = useState<PedidoCompleto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<PedidoCompleto | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<2 | 3>(2); // 2=enviado, 3=entregue
@@ -92,9 +92,10 @@ export const DeliveryOrdersList: React.FC = () => {
     const statusConfig: Record<number, { variant: 'info' | 'warning' | 'success' | 'danger'; label: string }> = {
       0: { variant: 'info', label: 'Recebido' },
       1: { variant: 'warning', label: 'Processando' },
-      2: { variant: 'info', label: 'Enviado' },
-      3: { variant: 'success', label: 'Entregue' },
-      4: { variant: 'danger', label: 'Cancelado' }
+      2: { variant: 'warning', label: 'Preparando' },
+      3: { variant: 'info', label: 'Em Rota' },
+      4: { variant: 'success', label: 'Entregue' },
+      5: { variant: 'danger', label: 'Cancelado' }
     };
     
     const config = statusConfig[status] || { variant: 'info', label: 'Desconhecido' };
@@ -229,11 +230,14 @@ export const DeliveryOrdersList: React.FC = () => {
                         Pedido #{order.id}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Cliente ID: #{order.fk_usuario_id}
+                        Cliente: {order.cliente?.nome || `ID: ${order.fk_usuario_id}`}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Endereço ID: #{order.fk_endereco_id}
-                      </p>
+                      {order.endereco && (
+                        <p className="text-sm text-gray-600">
+                          {order.endereco.rua}, {order.endereco.numero}
+                          {order.endereco.complemento && `, ${order.endereco.complemento}`}
+                        </p>
+                      )}
                       {order.estimativaEntrega && (
                         <p className="text-sm text-gray-600">
                           Previsto para: {formatDateTime(order.estimativaEntrega)}
@@ -252,26 +256,36 @@ export const DeliveryOrdersList: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Endereço de Entrega:</h4>
-                        <p className="text-sm text-gray-600">
-                          Endereço ID: #{order.fk_endereco_id}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Método de Entrega ID: #{order.fk_metodoEntrega_id}
-                        </p>
+                        {order.endereco ? (
+                          <>
+                            <p className="text-sm text-gray-600">
+                              {order.endereco.rua}, {order.endereco.numero}
+                              {order.endereco.complemento && `, ${order.endereco.complemento}`}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {order.endereco.bairro} - {order.endereco.cidade}/{order.endereco.estado}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              CEP: {order.endereco.cep}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-600">Endereço não encontrado</p>
+                        )}
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Informações do Pedido:</h4>
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-600">
-                            Subtotal: R$ {order.subtotal.toFixed(2)}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Taxa de Entrega: R$ {order.taxaEntrega.toFixed(2)}
-                          </p>
-                          <p className="text-sm font-medium text-gray-900">
-                            Total: R$ {order.total.toFixed(2)}
-                          </p>
-                        </div>
+                        <h4 className="font-medium text-gray-900 mb-2">Produtos:</h4>
+                        {order.produtos && order.produtos.length > 0 ? (
+                          <div className="space-y-1 max-h-20 overflow-y-auto">
+                            {order.produtos.map((produtoPedido, index) => (
+                              <p key={index} className="text-sm text-gray-600">
+                                {produtoPedido.quantidade}x {produtoPedido.produto?.nome || 'Produto não encontrado'}
+                              </p>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-600">Nenhum produto encontrado</p>
+                        )}
                       </div>
                     </div>
 
@@ -334,7 +348,9 @@ export const DeliveryOrdersList: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Informações do Cliente</h4>
                   <div className="space-y-2">
-                    <p><strong>Cliente ID:</strong> {selectedOrder.fk_usuario_id}</p>
+                    <p><strong>Cliente:</strong> {selectedOrder.cliente?.nome || 'Cliente não encontrado'}</p>
+                    <p><strong>Email:</strong> {selectedOrder.cliente?.email || 'Não informado'}</p>
+                    <p><strong>Telefone:</strong> {selectedOrder.cliente?.numeroCelular || 'Não informado'}</p>
                     <p><strong>Anotações:</strong> {selectedOrder.anotacoes || 'Nenhuma anotação'}</p>
                   </div>
                 </div>
@@ -353,8 +369,29 @@ export const DeliveryOrdersList: React.FC = () => {
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Endereço de Entrega</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p><strong>Endereço ID:</strong> {selectedOrder.fk_endereco_id}</p>
-                  <p><strong>Método de Entrega:</strong> {selectedOrder.fk_metodoEntrega_id}</p>
+                  {selectedOrder.endereco ? (
+                    <div>
+                      <p><strong>Rua:</strong> {selectedOrder.endereco.rua}, {selectedOrder.endereco.numero}</p>
+                      <p><strong>Bairro:</strong> {selectedOrder.endereco.bairro}</p>
+                      <p><strong>Cidade:</strong> {selectedOrder.endereco.cidade}</p>
+                      <p><strong>CEP:</strong> {selectedOrder.endereco.cep}</p>
+                      {selectedOrder.endereco.complemento && (
+                        <p><strong>Complemento:</strong> {selectedOrder.endereco.complemento}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p>Endereço não encontrado</p>
+                  )}
+                  
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p><strong>Método de Entrega:</strong> {selectedOrder.metodoEntrega?.nome || 'Não informado'}</p>
+                    {selectedOrder.metodoEntrega?.estimativaEntrega && (
+                      <p><strong>Estimativa:</strong> {selectedOrder.metodoEntrega.estimativaEntrega}</p>
+                    )}
+                    {selectedOrder.metodoEntrega?.preco && (
+                      <p><strong>Taxa de Entrega:</strong> R$ {selectedOrder.metodoEntrega.preco.toFixed(2)}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

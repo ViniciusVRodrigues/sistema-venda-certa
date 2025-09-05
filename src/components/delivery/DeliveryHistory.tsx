@@ -1,44 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, LoadingSpinner, Badge, Button } from '../ui';
 import { useAuth } from '../../context/AuthContext';
 import { deliveryOrderService } from '../../services/delivery/deliveryOrderService';
-import type { Order } from '../../types';
+import type { Pedido } from '../../types';
 
 export const DeliveryHistory: React.FC = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 10,
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [paginacao, setPaginacao] = useState({
+    pagina: 1,
+    tamanhoPagina: 10,
     total: 0,
-    totalPages: 0
+    totalPaginas: 0
   });
 
-  useEffect(() => {
-    loadHistory();
-  }, [pagination.page]);
-
-  const loadHistory = async () => {
+  const carregarHistorico = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setCarregando(true);
+      setErro(null);
       if (user?.id) {
-        const response = await deliveryOrderService.getDeliveryHistory(
-          user.id,
-          { page: pagination.page, pageSize: pagination.pageSize }
-        );
-        setOrders(response.orders);
-        setPagination(response.pagination);
+        const response = await deliveryOrderService.getDeliveryHistory(user.id);
+        setPedidos(response);
+        // Simular paginação para o histórico
+        const total = response.length;
+        const startIndex = (paginacao.pagina - 1) * paginacao.tamanhoPagina;
+        const endIndex = startIndex + paginacao.tamanhoPagina;
+        const pedidosPagina = response.slice(startIndex, endIndex);
+        setPedidos(pedidosPagina);
+        setPaginacao(prev => ({
+          ...prev,
+          total,
+          totalPaginas: Math.ceil(total / paginacao.tamanhoPagina)
+        }));
       }
     } catch (err) {
       console.error('Erro ao carregar histórico:', err);
-      setError('Erro ao carregar histórico de entregas');
+      setErro('Erro ao carregar histórico de entregas');
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
-  };
+  }, [user?.id, paginacao.pagina, paginacao.tamanhoPagina]);
+
+  useEffect(() => {
+    carregarHistorico();
+  }, [carregarHistorico]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -66,10 +73,10 @@ export const DeliveryHistory: React.FC = () => {
   };
 
   const getTotalEarnings = () => {
-    return orders.reduce((total, order) => total + order.deliveryFee, 0);
+    return pedidos.reduce((total, pedido) => total + pedido.taxaEntrega, 0);
   };
 
-  if (loading && orders.length === 0) {
+  if (carregando && pedidos.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
@@ -86,7 +93,7 @@ export const DeliveryHistory: React.FC = () => {
       </div>
 
         {/* Summary Cards */}
-        {orders.length > 0 && (
+        {pedidos.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card className="p-6">
               <div className="flex items-center">
@@ -99,7 +106,7 @@ export const DeliveryHistory: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <div className="text-2xl font-bold text-gray-900">
-                    {pagination.total}
+                    {paginacao.total}
                   </div>
                   <div className="text-sm text-gray-600">Total de Entregas</div>
                 </div>
@@ -135,7 +142,7 @@ export const DeliveryHistory: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <div className="text-2xl font-bold text-gray-900">
-                    {orders.length > 0 ? formatCurrency(getTotalEarnings() / orders.length) : formatCurrency(0)}
+                    {pedidos.length > 0 ? formatCurrency(getTotalEarnings() / pedidos.length) : formatCurrency(0)}
                   </div>
                   <div className="text-sm text-gray-600">Ganho Médio</div>
                 </div>
@@ -145,18 +152,18 @@ export const DeliveryHistory: React.FC = () => {
         )}
 
         {/* Orders History */}
-        {error ? (
+        {erro ? (
           <Card className="p-6 text-center">
             <div className="text-red-600 mb-4">
               <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">Erro ao carregar histórico</h3>
-              <p className="text-gray-600">{error}</p>
+              <p className="text-gray-600">{erro}</p>
             </div>
-            <Button onClick={loadHistory}>Tentar novamente</Button>
+            <Button onClick={carregarHistorico}>Tentar novamente</Button>
           </Card>
-        ) : orders.length === 0 ? (
+        ) : pedidos.length === 0 ? (
           <Card className="p-6 text-center">
             <div className="text-gray-400 mb-4">
               <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,28 +177,28 @@ export const DeliveryHistory: React.FC = () => {
           </Card>
         ) : (
           <div className="space-y-6">
-            {orders.map(order => (
-              <Card key={order.id} className="overflow-hidden">
+            {pedidos.map(pedido => (
+              <Card key={pedido.id} className="overflow-hidden">
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        Pedido #{order.id}
+                        Pedido #{pedido.id}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Cliente: {order.customer.name}
+                        Cliente: {pedido.fk_usuario_id}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Entregue em: {order.deliveredAt ? formatDateTime(order.deliveredAt) : 'Data não informada'}
+                        Entregue em: {pedido.dataEntrega ? formatDateTime(pedido.dataEntrega) : 'Data não informada'}
                       </p>
                     </div>
                     <div className="text-right">
                       <Badge variant="success">Entregue</Badge>
                       <div className="text-lg font-bold text-gray-900 mt-2">
-                        {formatCurrency(order.total)}
+                        {formatCurrency(pedido.total)}
                       </div>
                       <div className="text-sm text-green-600 font-medium">
-                        Taxa: {formatCurrency(order.deliveryFee)}
+                        Taxa: {formatCurrency(pedido.taxaEntrega)}
                       </div>
                     </div>
                   </div>
@@ -201,24 +208,20 @@ export const DeliveryHistory: React.FC = () => {
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Endereço de Entrega:</h4>
                         <p className="text-sm text-gray-600">
-                          {order.deliveryAddress.street}, {order.deliveryAddress.number}
-                          {order.deliveryAddress.complement && `, ${order.deliveryAddress.complement}`}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {order.deliveryAddress.neighborhood}, {order.deliveryAddress.city}/{order.deliveryAddress.state}
+                          Endereço ID: {pedido.fk_endereco_id}
                         </p>
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-900 mb-2">Resumo do Pedido:</h4>
                         <div className="space-y-1">
                           <p className="text-sm text-gray-600">
-                            {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
+                            Status: {pedido.status === 4 ? 'Entregue' : 'Outro'}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Método de Pagamento: {order.paymentMethod.name}
+                            Método de Pagamento ID: {pedido.fk_metodoPagamento_id}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Criado em: {formatDate(order.createdAt)}
+                            Estimativa: {pedido.estimativaEntrega ? formatDate(pedido.estimativaEntrega) : 'Não informado'}
                           </p>
                         </div>
                       </div>
@@ -229,22 +232,22 @@ export const DeliveryHistory: React.FC = () => {
             ))}
 
             {/* Pagination */}
-            {pagination.totalPages > 1 && (
+            {paginacao.totalPaginas > 1 && (
               <div className="flex justify-center items-center space-x-4 py-8">
                 <Button
                   variant="outline"
-                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                  disabled={pagination.page === 1}
+                  onClick={() => setPaginacao({ ...paginacao, pagina: paginacao.pagina - 1 })}
+                  disabled={paginacao.pagina === 1}
                 >
                   Anterior
                 </Button>
                 <span className="text-sm text-gray-600">
-                  Página {pagination.page} de {pagination.totalPages}
+                  Página {paginacao.pagina} de {paginacao.totalPaginas}
                 </span>
                 <Button
                   variant="outline"
-                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                  disabled={pagination.page === pagination.totalPages}
+                  onClick={() => setPaginacao({ ...paginacao, pagina: paginacao.pagina + 1 })}
+                  disabled={paginacao.pagina === paginacao.totalPaginas}
                 >
                   Próxima
                 </Button>
