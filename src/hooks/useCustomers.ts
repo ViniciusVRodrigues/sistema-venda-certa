@@ -80,7 +80,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     setPaginationState(prev => ({ ...prev, page }));
   }, []);
 
-  const updateVipStatus = useCallback(async (customerId: number, isVip: boolean) => {
+  const updateVipStatus = useCallback(async (customerId: number) => {
     try {
       setLoading(true);
       const updatedCustomer = await customersService.toggleVipStatus(customerId);
@@ -95,7 +95,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [fetchCustomers]);
 
-  const updateBlockedStatus = useCallback(async (customerId: number, isBlocked: boolean) => {
+  const updateBlockedStatus = useCallback(async (customerId: number) => {
     try {
       setLoading(true);
       const updatedCustomer = await customersService.toggleBlockedStatus(customerId);

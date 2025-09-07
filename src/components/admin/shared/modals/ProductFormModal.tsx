@@ -34,17 +34,17 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 }) => {
   const { categories } = useCategories();
   const [formData, setFormData] = useState<ProductFormData>({
-    name: '',
-    description: '',
-    shortDescription: '',
-    category: categories[0] || { id: '', name: '', isActive: true },
-    price: 0,
-    unit: 'un',
-    stock: 0,
-    status: 'active',
+    nome: '',
+    descricao: '',
+    descricaoResumida: '',
+    categoria: categories[0] || { id: 0, nome: '', descricao: '', estaAtiva: true },
+    preco: 0,
+    medida: 'un',
+    estoque: 0,
+    status: 1,
     sku: '',
-    tags: [],
-    images: []
+    tags: '',
+    imagem: undefined
   });
   const [tagsInput, setTagsInput] = useState('');
   const [imagesInput, setImagesInput] = useState('');
@@ -54,34 +54,35 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   useEffect(() => {
     if (product) {
       setFormData({
-        name: product.name,
-        description: product.description,
-        shortDescription: product.shortDescription || '',
-        category: product.category,
-        price: product.price,
-        unit: product.unit,
-        stock: product.stock,
+        nome: product.nome,
+        descricao: product.descricao || '',
+        descricaoResumida: product.descricaoResumida || '',
+        categoria: categories.find(cat => cat.id === product.fk_categoria_id) || categories[0],
+        preco: product.preco,
+        medida: product.medida,
+        estoque: product.estoque,
         status: product.status,
         sku: product.sku || '',
-        tags: product.tags,
-        images: product.images
+        tags: product.tags || '',
+        imagem: product.imagem ? btoa(String.fromCharCode(...product.imagem)) : undefined
       });
-      setTagsInput(product.tags.join(', '));
-      setImagesInput(product.images.join(', '));
+      // Handle tags - always treat as string from database
+      setTagsInput(product.tags || '');
+      setImagesInput('');
     } else {
       // Reset form for create mode
       setFormData({
-        name: '',
-        description: '',
-        shortDescription: '',
-        category: categories[0] || { id: '', name: '', isActive: true },
-        price: 0,
-        unit: 'un',
-        stock: 0,
-        status: 'active',
+        nome: '',
+        descricao: '',
+        descricaoResumida: '',
+        categoria: categories[0] || { id: 0, nome: '', descricao: '', estaAtiva: true },
+        preco: 0,
+        medida: 'un',
+        estoque: 0,
+        status: 1,
         sku: '',
-        tags: [],
-        images: []
+        tags: '',
+        imagem: undefined
       });
       setTagsInput('');
       setImagesInput('');
@@ -94,7 +95,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     if (categories.length > 0 && !product) {
       setFormData(prev => ({
         ...prev,
-        category: categories[0]
+        categoria: categories[0]
       }));
     }
   }, [categories, product]);
@@ -102,24 +103,24 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+    if (!formData.nome.trim()) {
+      newErrors.nome = 'Nome é obrigatório';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Descrição é obrigatória';
+    if (!formData.descricao.trim()) {
+      newErrors.descricao = 'Descrição é obrigatória';
     }
 
-    if (formData.price <= 0) {
-      newErrors.price = 'Preço deve ser maior que zero';
+    if (formData.preco <= 0) {
+      newErrors.preco = 'Preço deve ser maior que zero';
     }
 
-    if (formData.stock < 0) {
-      newErrors.stock = 'Estoque não pode ser negativo';
+    if (formData.estoque < 0) {
+      newErrors.estoque = 'Estoque não pode ser negativo';
     }
 
-    if (!formData.category.id) {
-      newErrors.category = 'Categoria é obrigatória';
+    if (!formData.categoria.id) {
+      newErrors.categoria = 'Categoria é obrigatória';
     }
 
     setErrors(newErrors);
@@ -134,11 +135,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
 
     try {
-      // Process tags and images
+      // Process tags - convert back to string for database
       const finalData = {
         ...formData,
-        tags: tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
-        images: imagesInput.split(',').map(img => img.trim()).filter(img => img.length > 0)
+        tags: tagsInput.trim()
       };
 
       await onSubmit(finalData);
@@ -148,7 +148,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof ProductFormData, value: any) => {
+  const handleInputChange = (field: keyof ProductFormData, value: string | number | Categoria) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -157,9 +157,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   };
 
   const handleCategoryChange = (categoryId: string) => {
-    const selectedCategory = categories.find(cat => cat.id === categoryId);
+    const selectedCategory = categories.find(cat => cat.id === Number(categoryId));
     if (selectedCategory) {
-      handleInputChange('category', selectedCategory);
+      handleInputChange('categoria', selectedCategory);
     }
   };
 
@@ -175,9 +175,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div>
             <Input
               label="Nome *"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              error={errors.name}
+              value={formData.nome}
+              onChange={(e) => handleInputChange('nome', e.target.value)}
+              error={errors.nome}
               placeholder="Nome do produto"
             />
           </div>
@@ -195,9 +195,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         <div>
           <Input
             label="Descrição curta"
-            value={formData.shortDescription}
-            onChange={(e) => handleInputChange('shortDescription', e.target.value)}
-            error={errors.shortDescription}
+            value={formData.descricaoResumida}
+            onChange={(e) => handleInputChange('descricaoResumida', e.target.value)}
+            error={errors.descricaoResumida}
             placeholder="Breve descrição do produto"
           />
         </div>
@@ -205,9 +205,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         <div>
           <Textarea
             label="Descrição *"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            error={errors.description}
+            value={formData.descricao}
+            onChange={(e) => handleInputChange('descricao', e.target.value)}
+            error={errors.descricao}
             placeholder="Descrição detalhada do produto"
             rows={3}
           />
@@ -217,12 +217,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div>
             <Select
               label="Categoria *"
-              value={formData.category.id}
+              value={formData.categoria.id.toString()}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              error={errors.category}
+              error={errors.categoria}
               options={categories.map(category => ({
-                value: category.id,
-                label: category.name
+                value: category.id.toString(),
+                label: category.nome
               }))}
             />
           </div>
@@ -232,18 +232,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               type="number"
               step="0.01"
               min="0"
-              value={formData.price}
-              onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-              error={errors.price}
+              value={formData.preco}
+              onChange={(e) => handleInputChange('preco', parseFloat(e.target.value) || 0)}
+              error={errors.preco}
               placeholder="0,00"
             />
           </div>
           <div>
             <Input
               label="Unidade"
-              value={formData.unit}
-              onChange={(e) => handleInputChange('unit', e.target.value)}
-              error={errors.unit}
+              value={formData.medida}
+              onChange={(e) => handleInputChange('medida', e.target.value)}
+              error={errors.medida}
               placeholder="un, kg, m, etc."
             />
           </div>
@@ -255,21 +255,20 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               label="Estoque *"
               type="number"
               min="0"
-              value={formData.stock}
-              onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
-              error={errors.stock}
+              value={formData.estoque}
+              onChange={(e) => handleInputChange('estoque', parseInt(e.target.value) || 0)}
+              error={errors.estoque}
               placeholder="0"
             />
           </div>
           <div>
             <Select
               label="Status"
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value as Product['status'])}
+              value={formData.status.toString()}
+              onChange={(e) => handleInputChange('status', parseInt(e.target.value))}
               options={[
-                { value: 'active', label: 'Ativo' },
-                { value: 'inactive', label: 'Inativo' },
-                { value: 'out_of_stock', label: 'Sem estoque' }
+                { value: '1', label: 'Ativo' },
+                { value: '0', label: 'Inativo' }
               ]}
             />
           </div>
