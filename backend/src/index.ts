@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-import sequelize from './config/database';
+import { DatabaseConnection } from './config/database';
+import { Logger } from './utils/Logger';
 import routes from './routes';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { specs, swaggerUi } from './config/swagger';
@@ -14,6 +14,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Initialize singletons
+const logger = Logger.getInstance();
+const dbConnection = DatabaseConnection.getInstance();
+
 // Security middleware
 app.use(helmet());
 
@@ -23,10 +27,13 @@ app.use(cors({
   credentials: true,
 }));
 
-// Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// Logging middleware - usando nosso Logger customizado
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'development') {
+    logger.info(`${req.method} ${req.path} - IP: ${req.ip}`);
+  }
+  next();
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -51,6 +58,16 @@ app.get('/', (req, res) => {
   });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // 404 handler
 app.use(notFound);
 
@@ -60,44 +77,47 @@ app.use(errorHandler);
 // Database connection and server startup
 const startServer = async () => {
   try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✅ Conexão com o banco de dados estabelecida com sucesso.');
-
+    logger.info('🚀 Iniciando servidor...');
+    
+    // Test database connection usando o Singleton
+    await dbConnection.connect();
+    
     // Sync database models (only in development)
     if (process.env.NODE_ENV === 'development') {
+      const sequelize = dbConnection.getSequelize();
       await sequelize.sync({ alter: false });
-      console.log('📊 Modelos do banco sincronizados.');
+      logger.info('📊 Modelos do banco sincronizados.');
     }
 
     // Start server
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`📝 API Documentation: http://localhost:${PORT}/api/health`);
-      console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🚀 Servidor rodando na porta ${PORT}`);
+      logger.info(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
+      logger.info(`🔍 Health Check: http://localhost:${PORT}/api/health`);
+      logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
-  } catch (error) {
-    console.error('❌ Erro ao conectar com o banco de dados:', error);
+  } catch (error: any) {
+    logger.error(`❌ Erro ao conectar com o banco de dados: ${error.message}`);
     process.exit(1);
   }
 };
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err: Error) => {
-  console.error('❌ Unhandled Promise Rejection:', err.message);
+  logger.error(`❌ Unhandled Promise Rejection: ${err.message}`);
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: Error) => {
-  console.error('❌ Uncaught Exception:', err.message);
+  logger.error(`❌ Uncaught Exception: ${err.message}`);
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('🛑 SIGTERM recebido. Encerrando servidor graciosamente...');
-  await sequelize.close();
+  logger.info('🛑 SIGTERM recebido. Encerrando servidor graciosamente...');
+  await dbConnection.disconnect();
   process.exit(0);
 });
 

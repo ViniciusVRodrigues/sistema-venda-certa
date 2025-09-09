@@ -43,6 +43,103 @@ router.get('/', asyncHandler(PedidoController.getAll));
 
 /**
  * @swagger
+ * /api/pedidos/calculate-delivery:
+ *   post:
+ *     summary: Calcula taxa e tempo de entrega usando Strategy Pattern
+ *     tags: [Pedidos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - distance
+ *               - weight
+ *               - method
+ *             properties:
+ *               distance:
+ *                 type: number
+ *                 description: Distância em km
+ *               weight:
+ *                 type: number
+ *                 description: Peso em kg
+ *               method:
+ *                 type: string
+ *                 enum: [motorcycle, car, pickup]
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, express, scheduled]
+ *                 default: normal
+ *     responses:
+ *       200:
+ *         description: Cálculo realizado com sucesso
+ *       400:
+ *         description: Parâmetros inválidos
+ */
+router.post('/calculate-delivery', asyncHandler(PedidoController.calculateDelivery));
+
+/**
+ * @swagger
+ * /api/pedidos/process-payment:
+ *   post:
+ *     summary: Processa pagamento usando Strategy Pattern
+ *     tags: [Pedidos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *               - method
+ *               - paymentData
+ *             properties:
+ *               amount:
+ *                 type: number
+ *               method:
+ *                 type: string
+ *                 enum: [credit_card, pix, cash]
+ *               paymentData:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Pagamento processado
+ *       400:
+ *         description: Dados inválidos
+ */
+router.post('/process-payment', asyncHandler(PedidoController.processPayment));
+
+/**
+ * @swagger
+ * /api/pedidos/report:
+ *   get:
+ *     summary: Gera relatório de pedidos usando Template Method
+ *     tags: [Pedidos]
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Relatório gerado com sucesso
+ */
+router.get('/report', asyncHandler(PedidoController.generateReport));
+
+/**
+ * @swagger
  * /api/pedidos/{id}:
  *   get:
  *     summary: Busca pedido por ID
@@ -136,6 +233,44 @@ router.get('/:id', asyncHandler(PedidoController.getById));
  *         $ref: '#/components/responses/InternalError'
  */
 router.post('/', pedidoValidation, asyncHandler(PedidoController.create));
+
+/**
+ * @swagger
+ * /api/pedidos/{id}/status:
+ *   put:
+ *     summary: Atualiza status do pedido
+ *     tags: [Pedidos]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do pedido
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 6
+ *               observacao:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Status atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Pedido não encontrado
+ */
+router.put('/:id/status', asyncHandler(PedidoController.updateStatus));
 
 /**
  * @swagger

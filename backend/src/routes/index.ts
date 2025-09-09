@@ -6,6 +6,7 @@ import categoriasRoutes from './categorias';
 import enderecosRoutes from './enderecos';
 import metodosEntregaRoutes from './metodosEntrega';
 import metodosPagamentoRoutes from './metodosPagamento';
+import demoRoutes from './demo';
 
 const router = Router();
 
@@ -18,12 +19,20 @@ router.use('/enderecos', enderecosRoutes);
 router.use('/metodos-entrega', metodosEntregaRoutes);
 router.use('/metodos-pagamento', metodosPagamentoRoutes);
 
+// Demo routes for design patterns
+router.use('/demo', demoRoutes);
+
 // Health check endpoint
 router.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'API Sistema Venda Certa está funcionando',
     timestamp: new Date().toISOString(),
+    patterns: {
+      singleton: 'Logger, DatabaseConnection',
+      templateMethod: 'AbstractController, DataProcessor, ReportGenerator',
+      strategy: 'Payment, Delivery, Search'
+    }
   });
 });
 

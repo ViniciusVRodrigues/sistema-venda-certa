@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Logger } from '../utils/Logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -24,7 +25,16 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  const logger = Logger.getInstance();
+  
   let { statusCode = 500, message } = err;
+
+  // Log do erro usando o Singleton Logger
+  if (statusCode >= 500) {
+    logger.error(`${req.method} ${req.path} - ${message} - Stack: ${err.stack}`);
+  } else {
+    logger.warn(`${req.method} ${req.path} - ${message}`);
+  }
 
   if (process.env.NODE_ENV === 'production' && !err.isOperational) {
     statusCode = 500;
@@ -42,6 +52,9 @@ export const errorHandler = (
 };
 
 export const notFound = (req: Request, res: Response, next: NextFunction): void => {
+  const logger = Logger.getInstance();
+  logger.warn(`Rota não encontrada: ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
+  
   const err = new AppError(`Rota ${req.originalUrl} não encontrada`, 404);
   next(err);
 };

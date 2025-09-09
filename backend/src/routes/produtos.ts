@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ProdutoController } from '../controllers/ProdutoController';
+import { EnhancedProdutoController } from '../controllers/EnhancedProdutoController';
 import { produtoValidation } from '../middleware/validation';
 import { asyncHandler } from '../middleware/errorHandler';
 
@@ -40,6 +41,65 @@ const router = Router();
  *         $ref: '#/components/responses/InternalError'
  */
 router.get('/', asyncHandler(ProdutoController.getAll));
+
+/**
+ * @swagger
+ * /api/produtos/search:
+ *   get:
+ *     summary: Busca produtos com diferentes estratégias
+ *     tags: [Produtos]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Termo de busca
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [simple, advanced, category]
+ *         description: Tipo de busca
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Limite de resultados
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Offset para paginação
+ *     responses:
+ *       200:
+ *         description: Resultados da busca
+ *       400:
+ *         description: Parâmetros inválidos
+ */
+router.get('/search', asyncHandler(ProdutoController.search));
+
+/**
+ * @swagger
+ * /api/produtos/enhanced/{action}:
+ *   post:
+ *     summary: Endpoints avançados com padrões de projeto
+ *     tags: [Produtos]
+ *     parameters:
+ *       - in: path
+ *         name: action
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [search, process, report, payment, delivery]
+ *         description: Ação a ser executada
+ *     responses:
+ *       200:
+ *         description: Ação executada com sucesso
+ */
+router.post('/enhanced/:action', asyncHandler(EnhancedProdutoController.prototype.handleRequest.bind(new EnhancedProdutoController())));
 
 /**
  * @swagger
