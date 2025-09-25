@@ -7,6 +7,7 @@ import {
   MetodoPagamento,
   Endereco,
 } from '../models';
+import bcrypt from 'bcryptjs';
 
 const seedData = async () => {
   try {
@@ -38,12 +39,15 @@ const seedData = async () => {
     ]);
     console.log('✅ Categorias criadas');
 
-    // Create users
+    // Create users with hashed passwords
+    const senhaHash = await bcrypt.hash('senha123', 10);
+    
     const usuarios = await Usuario.bulkCreate([
       {
         nome: 'João Silva',
         email: 'joao@email.com',
-        cargo: 'customer',
+        senha: senhaHash,
+        cargo: 'cliente',
         numeroCelular: '11999999999',
         status: 1,
         totalPedidos: 0,
@@ -54,7 +58,8 @@ const seedData = async () => {
       {
         nome: 'Maria Santos',
         email: 'maria@email.com',
-        cargo: 'customer',
+        senha: senhaHash,
+        cargo: 'cliente',
         numeroCelular: '11888888888',
         status: 1,
         totalPedidos: 0,
@@ -65,7 +70,8 @@ const seedData = async () => {
       {
         nome: 'Pedro Entregador',
         email: 'pedro@email.com',
-        cargo: 'delivery',
+        senha: senhaHash,
+        cargo: 'entregador',
         numeroCelular: '11777777777',
         status: 1,
         totalPedidos: 0,
@@ -76,6 +82,7 @@ const seedData = async () => {
       {
         nome: 'Ana Admin',
         email: 'ana@email.com',
+        senha: senhaHash,
         cargo: 'admin',
         numeroCelular: '11666666666',
         status: 1,

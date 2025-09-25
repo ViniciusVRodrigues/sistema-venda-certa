@@ -1,25 +1,27 @@
 import { Request, Response } from 'express';
 import { Usuario, Endereco } from '../models';
 import { validationResult } from 'express-validator';
+import { AbstractController } from './AbstractController';
 
-export class UsuarioController {
-  // GET /api/usuarios
+export class UsuarioController extends AbstractController {
+  // GET /api/usuarios - usando Template Method
   static async getAll(req: Request, res: Response) {
-    try {
-      const usuarios = await Usuario.findAll({
+    const controller = new UsuarioController();
+    controller.processRequest = async () => {
+      return await Usuario.findAll({
         include: [
           { model: Endereco, as: 'enderecos' },
         ],
       });
-      res.json(usuarios);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar usuários' });
-    }
+    };
+    
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/usuarios/:id
+  // GET /api/usuarios/:id - usando Template Method
   static async getById(req: Request, res: Response) {
-    try {
+    const controller = new UsuarioController();
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const usuario = await Usuario.findByPk(id, {
         include: [
@@ -28,97 +30,149 @@ export class UsuarioController {
       });
 
       if (!usuario) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        const error = new Error('Usuário não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.json(usuario);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar usuário' });
-    }
+      return usuario;
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // POST /api/usuarios
+  // POST /api/usuarios - usando Template Method
   static async create(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new UsuarioController();
 
-      const usuario = await Usuario.create(req.body);
-      res.status(201).json(usuario);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'SequelizeUniqueConstraintError') {
-        res.status(400).json({ error: 'Email já está em uso' });
-      } else {
-        res.status(500).json({ error: 'Erro ao criar usuário' });
-      }
-    }
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
+      return await Usuario.create(req.body);
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // PUT /api/usuarios/:id
+  // PUT /api/usuarios/:id - usando Template Method
   static async update(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new UsuarioController();
 
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const [updated] = await Usuario.update(req.body, {
         where: { id },
       });
 
       if (updated === 0) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        const error = new Error('Usuário não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
       const usuario = await Usuario.findByPk(id);
-      res.json(usuario);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'SequelizeUniqueConstraintError') {
-        res.status(400).json({ error: 'Email já está em uso' });
-      } else {
-        res.status(500).json({ error: 'Erro ao atualizar usuário' });
-      }
-    }
+      return usuario;
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // DELETE /api/usuarios/:id
+  // DELETE /api/usuarios/:id - usando Template Method
   static async delete(req: Request, res: Response) {
-    try {
+    const controller = new UsuarioController();
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const deleted = await Usuario.destroy({
         where: { id },
       });
 
       if (deleted === 0) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        const error = new Error('Usuário não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao deletar usuário' });
-    }
+      return { message: 'Usuário deletado com sucesso' };
+    };
+
+    controller.formatResponse = (result: any): any => {
+      return {
+        success: true,
+        message: result.message
+      };
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/usuarios/:id/enderecos
+  // GET /api/usuarios/:id/enderecos - usando Template Method
   static async getEnderecos(req: Request, res: Response) {
-    try {
+    const controller = new UsuarioController();
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const usuario = await Usuario.findByPk(id);
 
       if (!usuario) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
+        const error = new Error('Usuário não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
       const enderecos = await Endereco.findAll({
         where: { fk_usuario_id: id },
       });
 
-      res.json(enderecos);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar endereços do usuário' });
+      return enderecos;
+    };
+
+    await controller.handleRequest(req, res);
+  }
+
+  // Sobrescrever tratamento de erro para casos específicos
+  protected handleError(error: any, req: Request, res: Response): void {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      this.logger.warn('Tentativa de criar usuário com email duplicado');
+      res.status(400).json({ 
+        success: false, 
+        error: 'Email já está em uso' 
+      });
+      return;
     }
+
+    if (error.status === 404) {
+      res.status(404).json({ 
+        success: false, 
+        error: error.message 
+      });
+      return;
+    }
+
+    // Usar o tratamento padrão para outros erros
+    super.handleError(error, req, res);
+  }
+
+  // Implementação obrigatória do método abstrato (não usada nos métodos estáticos)
+  protected async processRequest(req: Request, res: Response): Promise<any> {
+    throw new Error('Este método deve ser sobrescrito em tempo de execução');
   }
 }

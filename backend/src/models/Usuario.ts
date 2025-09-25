@@ -5,6 +5,7 @@ interface UsuarioAttributes {
   id: number;
   nome: string;
   email: string;
+  senha: string;
   cargo: string;
   numeroCelular?: string;
   status: number;
@@ -20,6 +21,7 @@ class Usuario extends Model<UsuarioAttributes, UsuarioCreationAttributes> implem
   public id!: number;
   public nome!: string;
   public email!: string;
+  public senha!: string;
   public cargo!: string;
   public numeroCelular?: string;
   public status!: number;
@@ -44,6 +46,10 @@ Usuario.init(
       type: DataTypes.STRING(150),
       allowNull: false,
       unique: true,
+    },
+    senha: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
     },
     cargo: {
       type: DataTypes.STRING(50),

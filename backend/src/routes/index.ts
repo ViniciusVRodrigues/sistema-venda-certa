@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import authRoutes from './auth';
 import usuariosRoutes from './usuarios';
 import produtosRoutes from './produtos';
 import pedidosRoutes from './pedidos';
@@ -9,6 +10,9 @@ import metodosPagamentoRoutes from './metodosPagamento';
 import demoRoutes from './demo';
 
 const router = Router();
+
+// Authentication routes (public)
+router.use('/auth', authRoutes);
 
 // API routes
 router.use('/usuarios', usuariosRoutes);

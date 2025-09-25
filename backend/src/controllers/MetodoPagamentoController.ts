@@ -1,103 +1,153 @@
 import { Request, Response } from 'express';
 import { MetodoPagamento } from '../models';
 import { validationResult } from 'express-validator';
+import { AbstractController } from './AbstractController';
 
-export class MetodoPagamentoController {
-  // GET /api/metodos-pagamento
+export class MetodoPagamentoController extends AbstractController {
+  // GET /api/metodos-pagamento - usando Template Method
   static async getAll(req: Request, res: Response) {
-    try {
-      const metodosPagamento = await MetodoPagamento.findAll({
+    const controller = new MetodoPagamentoController();
+    controller.processRequest = async () => {
+      return await MetodoPagamento.findAll({
         order: [['nome', 'ASC']],
       });
-      res.json(metodosPagamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar métodos de pagamento' });
-    }
+    };
+    
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/metodos-pagamento/:id
+  // GET /api/metodos-pagamento/:id - usando Template Method
   static async getById(req: Request, res: Response) {
-    try {
+    const controller = new MetodoPagamentoController();
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const metodoPagamento = await MetodoPagamento.findByPk(id);
 
       if (!metodoPagamento) {
-        return res.status(404).json({ error: 'Método de pagamento não encontrado' });
+        const error = new Error('Método de pagamento não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.json(metodoPagamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar método de pagamento' });
-    }
+      return metodoPagamento;
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // POST /api/metodos-pagamento
+  // POST /api/metodos-pagamento - usando Template Method
   static async create(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new MetodoPagamentoController();
 
-      const metodoPagamento = await MetodoPagamento.create(req.body);
-      res.status(201).json(metodoPagamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar método de pagamento' });
-    }
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
+      return await MetodoPagamento.create(req.body);
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // PUT /api/metodos-pagamento/:id
+  // PUT /api/metodos-pagamento/:id - usando Template Method
   static async update(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new MetodoPagamentoController();
 
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const [updated] = await MetodoPagamento.update(req.body, {
         where: { id },
       });
 
       if (updated === 0) {
-        return res.status(404).json({ error: 'Método de pagamento não encontrado' });
+        const error = new Error('Método de pagamento não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
       const metodoPagamento = await MetodoPagamento.findByPk(id);
-      res.json(metodoPagamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao atualizar método de pagamento' });
-    }
+      return metodoPagamento;
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // DELETE /api/metodos-pagamento/:id
+  // DELETE /api/metodos-pagamento/:id - usando Template Method
   static async delete(req: Request, res: Response) {
-    try {
+    const controller = new MetodoPagamentoController();
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const deleted = await MetodoPagamento.destroy({
         where: { id },
       });
 
       if (deleted === 0) {
-        return res.status(404).json({ error: 'Método de pagamento não encontrado' });
+        const error = new Error('Método de pagamento não encontrado');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao deletar método de pagamento' });
-    }
+      return { message: 'Método de pagamento deletado com sucesso' };
+    };
+
+    controller.formatResponse = (result: any): any => {
+      return {
+        success: true,
+        message: result.message
+      };
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/metodos-pagamento/ativos
+  // GET /api/metodos-pagamento/ativos - usando Template Method
   static async getAtivos(req: Request, res: Response) {
-    try {
-      const metodosPagamento = await MetodoPagamento.findAll({
+    const controller = new MetodoPagamentoController();
+
+    controller.processRequest = async () => {
+      return await MetodoPagamento.findAll({
         where: { ativo: 1 },
         order: [['nome', 'ASC']],
       });
-      res.json(metodosPagamento);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar métodos de pagamento ativos' });
+    };
+
+    await controller.handleRequest(req, res);
+  }
+
+  // Sobrescrever tratamento de erro para casos específicos
+  protected handleError(error: any, req: Request, res: Response): void {
+    if (error.status === 404) {
+      res.status(404).json({ 
+        success: false, 
+        error: error.message 
+      });
+      return;
     }
+
+    // Usar o tratamento padrão para outros erros
+    super.handleError(error, req, res);
+  }
+
+  // Implementação obrigatória do método abstrato (não usada nos métodos estáticos)
+  protected async processRequest(req: Request, res: Response): Promise<any> {
+    throw new Error('Este método deve ser sobrescrito em tempo de execução');
   }
 }

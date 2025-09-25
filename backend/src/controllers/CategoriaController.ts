@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { Categoria, Produto } from '../models';
 import { validationResult } from 'express-validator';
+import { AbstractController } from './AbstractController';
 
-export class CategoriaController {
-  // GET /api/categorias
+export class CategoriaController extends AbstractController {
+  // GET /api/categorias - usando Template Method
   static async getAll(req: Request, res: Response) {
-    try {
-      const categorias = await Categoria.findAll({
+    const controller = new CategoriaController();
+    controller.processRequest = async () => {
+      return await Categoria.findAll({
         include: [
           { 
             model: Produto, 
@@ -15,15 +17,15 @@ export class CategoriaController {
           },
         ],
       });
-      res.json(categorias);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar categorias' });
-    }
+    };
+    
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/categorias/:id
+  // GET /api/categorias/:id - usando Template Method
   static async getById(req: Request, res: Response) {
-    try {
+    const controller = new CategoriaController();
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const categoria = await Categoria.findByPk(id, {
         include: [
@@ -32,57 +34,76 @@ export class CategoriaController {
       });
 
       if (!categoria) {
-        return res.status(404).json({ error: 'Categoria não encontrada' });
+        const error = new Error('Categoria não encontrada');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.json(categoria);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar categoria' });
-    }
+      return categoria;
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // POST /api/categorias
+  // POST /api/categorias - usando Template Method
   static async create(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new CategoriaController();
 
-      const categoria = await Categoria.create(req.body);
-      res.status(201).json(categoria);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar categoria' });
-    }
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
+      return await Categoria.create(req.body);
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // PUT /api/categorias/:id
+  // PUT /api/categorias/:id - usando Template Method
   static async update(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    const controller = new CategoriaController();
 
+    controller.validateRequest = (req: Request): boolean => {
+      const errors = validationResult(req);
+      return errors.isEmpty();
+    };
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       const [updated] = await Categoria.update(req.body, {
         where: { id },
       });
 
       if (updated === 0) {
-        return res.status(404).json({ error: 'Categoria não encontrada' });
+        const error = new Error('Categoria não encontrada');
+        (error as any).status = 404;
+        throw error;
       }
 
       const categoria = await Categoria.findByPk(id);
-      res.json(categoria);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao atualizar categoria' });
-    }
+      return categoria;
+    };
+
+    controller.handleValidationError = (req: Request, res: Response): void => {
+      const errors = validationResult(req);
+      res.status(400).json({ errors: errors.array() });
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // DELETE /api/categorias/:id
+  // DELETE /api/categorias/:id - usando Template Method
   static async delete(req: Request, res: Response) {
-    try {
+    const controller = new CategoriaController();
+
+    controller.processRequest = async (req: Request) => {
       const { id } = req.params;
       
       // Check if category has products
@@ -91,9 +112,9 @@ export class CategoriaController {
       });
 
       if (produtosCount > 0) {
-        return res.status(400).json({ 
-          error: 'Não é possível deletar categoria que possui produtos associados' 
-        });
+        const error = new Error('Não é possível deletar categoria que possui produtos associados');
+        (error as any).status = 400;
+        throw error;
       }
 
       const deleted = await Categoria.destroy({
@@ -101,19 +122,30 @@ export class CategoriaController {
       });
 
       if (deleted === 0) {
-        return res.status(404).json({ error: 'Categoria não encontrada' });
+        const error = new Error('Categoria não encontrada');
+        (error as any).status = 404;
+        throw error;
       }
 
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao deletar categoria' });
-    }
+      return { message: 'Categoria deletada com sucesso' };
+    };
+
+    controller.formatResponse = (result: any): any => {
+      return {
+        success: true,
+        message: result.message
+      };
+    };
+
+    await controller.handleRequest(req, res);
   }
 
-  // GET /api/categorias/ativas
+  // GET /api/categorias/ativas - usando Template Method
   static async getAtivas(req: Request, res: Response) {
-    try {
-      const categorias = await Categoria.findAll({
+    const controller = new CategoriaController();
+
+    controller.processRequest = async () => {
+      return await Categoria.findAll({
         where: { estaAtiva: true },
         include: [
           { 
@@ -125,9 +157,35 @@ export class CategoriaController {
           },
         ],
       });
-      res.json(categorias);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao buscar categorias ativas' });
+    };
+
+    await controller.handleRequest(req, res);
+  }
+
+  // Sobrescrever tratamento de erro para casos específicos
+  protected handleError(error: any, req: Request, res: Response): void {
+    if (error.status === 404) {
+      res.status(404).json({ 
+        success: false, 
+        error: error.message 
+      });
+      return;
     }
+
+    if (error.status === 400) {
+      res.status(400).json({ 
+        success: false, 
+        error: error.message 
+      });
+      return;
+    }
+
+    // Usar o tratamento padrão para outros erros
+    super.handleError(error, req, res);
+  }
+
+  // Implementação obrigatória do método abstrato (não usada nos métodos estáticos)
+  protected async processRequest(req: Request, res: Response): Promise<any> {
+    throw new Error('Este método deve ser sobrescrito em tempo de execução');
   }
 }
