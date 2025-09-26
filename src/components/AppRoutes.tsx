@@ -3,10 +3,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Layout } from './layout';
 import { LoadingSpinner } from './ui';
+import { ProtectedRoute } from './guards';
 
 // Auth Pages
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
+import { UnauthorizedPage } from '../pages/auth/UnauthorizedPage';
 
 // Customer Pages
 import { HomePage } from '../pages/customer/HomePage';
@@ -28,41 +30,6 @@ import { CustomersList } from '../components/admin/customers/CustomersList';
 import { DeliveryDashboardPage } from '../pages/delivery/DeliveryDashboardPage';
 import { DeliveryOrdersPage } from '../pages/delivery/DeliveryOrdersPage';
 import { DeliveryHistoryPage } from '../pages/delivery/DeliveryHistoryPage';
-
-// Protected Route Component
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: 'admin' | 'customer' | 'delivery';
-  redirectTo?: string;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRole,
-  redirectTo = '/auth/login'
-}) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
-  }
-  
-  if (requiredRole && user?.cargo !== requiredRole) {
-    const fallbackRoute = user?.cargo === 'admin' ? '/admin' : 
-                          user?.cargo === 'delivery' ? '/delivery' : '/';
-    return <Navigate to={fallbackRoute} replace />;
-  }
-  
-  return <>{children}</>;
-};
 
 export const AppRoutes: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -93,6 +60,9 @@ export const AppRoutes: React.FC = () => {
         }
       />
       
+      {/* Unauthorized Route */}
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      
       {/* Customer Routes */}
       <Route
         path="/"
@@ -115,7 +85,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/cart"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CartPage />
             </Layout>
@@ -126,7 +96,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/checkout"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CheckoutPage />
             </Layout>
@@ -137,7 +107,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/customer/menu"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CustomerMenuPage />
             </Layout>
@@ -148,7 +118,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/customer/addresses"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CustomerAddressesPage />
             </Layout>
@@ -159,7 +129,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/customer/orders"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CustomerOrdersPage />
             </Layout>
@@ -170,7 +140,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/customer/profile"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CustomerProfilePage />
             </Layout>
@@ -181,7 +151,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/orders"
         element={
-          <ProtectedRoute requiredRole="customer">
+          <ProtectedRoute requireRole="cliente">
             <Layout>
               <CustomerOrdersPage />
             </Layout>
@@ -193,7 +163,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery"
         element={
-          <ProtectedRoute requiredRole="delivery">
+          <ProtectedRoute requireRole="entregador">
             <Layout showFooter={false}>
               <DeliveryDashboardPage />
             </Layout>
@@ -204,7 +174,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/orders"
         element={
-          <ProtectedRoute requiredRole="delivery">
+          <ProtectedRoute requireRole="entregador">
             <Layout showFooter={false}>
               <DeliveryOrdersPage />
             </Layout>
@@ -215,7 +185,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/history"
         element={
-          <ProtectedRoute requiredRole="delivery">
+          <ProtectedRoute requireRole="entregador">
             <Layout showFooter={false}>
               <DeliveryHistoryPage />
             </Layout>
@@ -227,7 +197,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requireRole={["admin", "administrador"]}>
             <Layout showFooter={false}>
               <AdminDashboard />
             </Layout>
@@ -238,7 +208,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/admin/products"
         element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requireRole={["admin", "administrador"]}>
             <Layout showFooter={false}>
               <ProductsList />
             </Layout>
@@ -249,7 +219,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/admin/orders"
         element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requireRole={["admin", "administrador"]}>
             <Layout showFooter={false}>
               <OrdersList />
             </Layout>
@@ -260,7 +230,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/admin/customers"
         element={
-          <ProtectedRoute requiredRole="admin">
+          <ProtectedRoute requireRole={["admin", "administrador"]}>
             <Layout showFooter={false}>
               <CustomersList />
             </Layout>
