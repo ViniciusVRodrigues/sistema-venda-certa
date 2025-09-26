@@ -3,8 +3,16 @@
  * Integrates with backend JWT authentication API
  */
 
-import { apiService, ApiResponse } from './api';
+import { apiService } from './api';
 import type { Usuario } from '../types';
+
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+  details?: any;
+}
 
 interface LoginRequest {
   email: string;
