@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Usuario } from '../types';
-import { mockUsuarios } from '../services/mock/databaseMockData';
+import { authService } from '../services/auth';
 
 interface AuthState {
   user: Usuario | null;
@@ -15,8 +15,8 @@ type AuthAction =
   | { type: 'LOGOUT' };
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
   register: (userData: Partial<Usuario>) => Promise<void>;
 }
 
@@ -52,81 +52,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading: false,
   });
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, remember: boolean = false) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const loginResponse = await authService.login(email, password, remember);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: loginResponse.usuario });
       
-      // Find user in mockUsuarios by email
-      const foundUser = mockUsuarios.find(user => user.email === email);
-      
-      if (!foundUser) {
-        throw new Error('Usuário não encontrado');
-      }
-      
-      // In a real app, you would validate the password here
-      // For now, we'll just check if password is not empty
-      if (!password) {
-        throw new Error('Senha é obrigatória');
-      }
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: foundUser });
-      localStorage.setItem('user', JSON.stringify(foundUser));
+      // Store user data in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(loginResponse.usuario));
     } catch (error) {
       dispatch({ type: 'SET_LOADING', payload: false });
       throw error;
     }
   };
 
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('user');
+  const logout = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.warn('Logout error:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('user');
+    }
   };
 
   const register = async (userData: Partial<Usuario>) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: Usuario = {
-        id: Date.now(),
+      const registerData = {
         nome: userData.nome || '',
         email: userData.email || '',
-        cargo: 'customer',
+        senha: (userData as any).senha || '', // Password should be passed from the registration form
+        cargo: (userData.cargo as 'cliente' | 'admin' | 'entregador' | 'administrador') || 'cliente',
         numeroCelular: userData.numeroCelular,
-        status: 1, // Active
-        totalPedidos: 0,
-        totalGasto: 0,
-        entregasFeitas: 0,
-        nota: 0
       };
       
-      // Add to mock data (in real app would save to database)
-      mockUsuarios.push(newUser);
+      const registerResponse = await authService.register(registerData);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: registerResponse.usuario });
       
-      dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } catch {
+      // Store user data in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(registerResponse.usuario));
+    } catch (error) {
       dispatch({ type: 'SET_LOADING', payload: false });
-      throw new Error('Registration failed');
+      throw error;
     }
   };
 
-  // Check for stored user on mount
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      } catch {
-        localStorage.removeItem('user');
+  // Check for stored user and verify token on mount
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser && authService.isAuthenticated()) {
+        try {
+          // Verify token with backend
+          const verification = await authService.verifyToken();
+          
+          if (verification && verification.valid) {
+            dispatch({ type: 'LOGIN_SUCCESS', payload: verification.usuario });
+            // Update stored user data
+            localStorage.setItem('user', JSON.stringify(verification.usuario));
+          } else {
+            // Token is invalid, clean up
+            localStorage.removeItem('user');
+          }
+        } catch (error) {
+          console.warn('Token verification failed:', error);
+          localStorage.removeItem('user');
+        }
       }
-    }
+    };
+
+    initializeAuth();
+
+    // Listen for token expiration events
+    const handleTokenExpired = () => {
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('user');
+    };
+
+    window.addEventListener('auth:token-expired', handleTokenExpired);
+    
+    return () => {
+      window.removeEventListener('auth:token-expired', handleTokenExpired);
+    };
   }, []);
 
   return (

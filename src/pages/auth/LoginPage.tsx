@@ -8,6 +8,7 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -18,10 +19,10 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       navigate(email.includes('admin') ? '/admin' : '/');
-    } catch {
-      setError('Email ou senha inválidos');
+    } catch (error: any) {
+      setError(error.message || 'Email ou senha inválidos');
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +98,7 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="Sua senha"
-              helpText="Qualquer senha para demonstração"
+              helpText="Use a senha configurada no backend"
             />
             
             <div className="flex items-center justify-between">
@@ -106,6 +107,8 @@ export const LoginPage: React.FC = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
