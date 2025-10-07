@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UsuarioController } from '../controllers/UsuarioController';
-import { usuarioValidation } from '../middleware/validation';
+import { usuarioValidation, usuarioUpdateValidation } from '../middleware/validation';
 import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
@@ -152,7 +152,7 @@ router.post('/', usuarioValidation, asyncHandler(UsuarioController.create));
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.put('/:id', usuarioValidation, asyncHandler(UsuarioController.update));
+router.put('/:id', usuarioUpdateValidation, asyncHandler(UsuarioController.update));
 
 /**
  * @swagger

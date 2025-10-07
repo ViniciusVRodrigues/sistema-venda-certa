@@ -8,6 +8,8 @@ export const usuarioValidation = [
     .withMessage('Nome deve ter no máximo 100 caracteres'),
   
   body('email')
+    .notEmpty()
+    .withMessage('Email é obrigatório')
     .isEmail()
     .withMessage('Email deve ser válido')
     .isLength({ max: 150 })
@@ -16,6 +18,8 @@ export const usuarioValidation = [
   body('cargo')
     .notEmpty()
     .withMessage('Cargo é obrigatório')
+    .isIn(['customer', 'admin', 'delivery'])
+    .withMessage('Cargo deve ser customer, admin ou delivery')
     .isLength({ max: 50 })
     .withMessage('Cargo deve ter no máximo 50 caracteres'),
   
@@ -25,6 +29,58 @@ export const usuarioValidation = [
     .withMessage('Número de celular deve ter no máximo 20 caracteres'),
   
   body('status')
+    .optional()
+    .isInt({ min: 0, max: 255 })
+    .withMessage('Status deve ser um número entre 0 e 255'),
+  
+  body('totalPedidos')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Total de pedidos deve ser um número inteiro positivo'),
+  
+  body('totalGasto')
+    .optional()
+    .isFloat({ min: 0, max: 99999999.99 })
+    .withMessage('Total gasto deve ser um número entre 0 e 99999999.99'),
+  
+  body('entregasFeitas')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Entregas feitas deve ser um número inteiro positivo'),
+  
+  body('nota')
+    .optional()
+    .isFloat({ min: 0.0, max: 9.9 })
+    .withMessage('Nota deve ser um número entre 0.0 e 9.9'),
+];
+
+export const usuarioUpdateValidation = [
+  body('nome')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Nome deve ter no máximo 100 caracteres'),
+  
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Email deve ser válido')
+    .isLength({ max: 150 })
+    .withMessage('Email deve ter no máximo 150 caracteres'),
+  
+  body('cargo')
+    .optional()
+    .isIn(['customer', 'admin', 'delivery'])
+    .withMessage('Cargo deve ser customer, admin ou delivery')
+    .isLength({ max: 50 })
+    .withMessage('Cargo deve ter no máximo 50 caracteres'),
+  
+  body('numeroCelular')
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage('Número de celular deve ter no máximo 20 caracteres'),
+  
+  body('status')
+    .optional()
     .isInt({ min: 0, max: 255 })
     .withMessage('Status deve ser um número entre 0 e 255'),
   
@@ -142,6 +198,8 @@ export const produtoValidation = [
     .withMessage('Descrição resumida deve ter no máximo 255 caracteres'),
   
   body('preco')
+    .notEmpty()
+    .withMessage('Preço é obrigatório')
     .isFloat({ min: 0.00, max: 99999999.99 })
     .withMessage('Preço deve ser um número entre 0.00 e 99999999.99'),
   
@@ -157,6 +215,7 @@ export const produtoValidation = [
     .withMessage('Estoque deve ser um número inteiro positivo'),
   
   body('status')
+    .optional()
     .isInt({ min: 0, max: 255 })
     .withMessage('Status deve ser um número entre 0 e 255'),
   
@@ -166,6 +225,60 @@ export const produtoValidation = [
     .withMessage('Tags devem ter no máximo 255 caracteres'),
   
   body('fk_categoria_id')
+    .notEmpty()
+    .withMessage('Categoria é obrigatória')
+    .isInt({ min: 1 })
+    .withMessage('ID da categoria deve ser um número inteiro positivo'),
+];
+
+export const produtoUpdateValidation = [
+  body('sku')
+    .optional()
+    .isLength({ max: 30 })
+    .withMessage('SKU deve ter no máximo 30 caracteres'),
+  
+  body('nome')
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage('Nome deve ter no máximo 100 caracteres'),
+  
+  body('descricao')
+    .optional()
+    .isString()
+    .withMessage('Descrição deve ser um texto'),
+  
+  body('descricaoResumida')
+    .optional()
+    .isLength({ max: 255 })
+    .withMessage('Descrição resumida deve ter no máximo 255 caracteres'),
+  
+  body('preco')
+    .optional()
+    .isFloat({ min: 0.00, max: 99999999.99 })
+    .withMessage('Preço deve ser um número entre 0.00 e 99999999.99'),
+  
+  body('medida')
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage('Medida deve ter no máximo 20 caracteres'),
+  
+  body('estoque')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Estoque deve ser um número inteiro positivo'),
+  
+  body('status')
+    .optional()
+    .isInt({ min: 0, max: 255 })
+    .withMessage('Status deve ser um número entre 0 e 255'),
+  
+  body('tags')
+    .optional()
+    .isLength({ max: 255 })
+    .withMessage('Tags devem ter no máximo 255 caracteres'),
+  
+  body('fk_categoria_id')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('ID da categoria deve ser um número inteiro positivo'),
 ];

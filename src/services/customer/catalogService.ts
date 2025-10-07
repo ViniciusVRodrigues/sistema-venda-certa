@@ -1,9 +1,5 @@
 import type { Produto, Categoria, PaginationData } from '../../types';
-import { mockProdutos, mockCategorias } from '../mock/databaseMockData';
-
-// Use database schema data
-const mockProducts: Produto[] = [...mockProdutos];
-const mockCategories: Categoria[] = [...mockCategorias];
+import { apiService } from '../api';
 
 export interface CatalogFilters {
   search?: string;
@@ -36,9 +32,9 @@ export const catalogService = {
     pagination: { page: number; pageSize: number } = { page: 1, pageSize: 12 },
     sort: CatalogSortOption = { field: 'nome', direction: 'asc' }
   ): Promise<CatalogResponse> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-
-    let filteredProducts = mockProducts.filter(product => product.status === 1); // Only active products
+    try {
+      const response = await apiService.get<{ data: Produto[] }>('/produtos');
+      let filteredProducts = (response.data || []).filter(product => product.status === 1); // Only active products
 
     // Apply search filter
     if (filters.search) {
@@ -113,136 +109,179 @@ export const catalogService = {
       }
     });
 
-    // Calculate filter options
-    const priceRange = {
-      min: Math.min(...mockProducts.filter(p => p.status === 1).map(p => p.preco)),
-      max: Math.max(...mockProducts.filter(p => p.status === 1).map(p => p.preco))
-    };
+      // Calculate filter options
+      const allProducts = response.data || [];
+      const activeProducts = allProducts.filter(p => p.status === 1);
+      
+      const priceRange = activeProducts.length > 0 ? {
+        min: Math.min(...activeProducts.map(p => p.preco)),
+        max: Math.max(...activeProducts.map(p => p.preco))
+      } : { min: 0, max: 0 };
 
-    const availableTags = Array.from(
-      new Set(
-        mockProducts
-          .filter(p => p.status === 1 && p.tags)
-          .flatMap(p => p.tags!.split(',').map(tag => tag.trim()))
-      )
-    );
+      const availableTags = Array.from(
+        new Set(
+          activeProducts
+            .filter(p => p.tags)
+            .flatMap(p => p.tags!.split(',').map(tag => tag.trim()))
+        )
+      );
 
-    const activeCategories = mockCategories.filter(cat => cat.estaAtiva);
+      const categoriesResponse = await apiService.get<{ data: Categoria[] }>('/categorias');
+      const activeCategories = (categoriesResponse.data || []).filter(cat => cat.estaAtiva);
 
-    // Apply pagination
-    const startIndex = (pagination.page - 1) * pagination.pageSize;
-    const endIndex = startIndex + pagination.pageSize;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+      // Apply pagination
+      const startIndex = (pagination.page - 1) * pagination.pageSize;
+      const endIndex = startIndex + pagination.pageSize;
+      const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
-    return {
-      products: paginatedProducts,
-      pagination: {
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        total: filteredProducts.length,
-        totalPages: Math.ceil(filteredProducts.length / pagination.pageSize)
-      },
-      filters: {
-        categories: activeCategories,
-        priceRange,
-        availableTags
-      }
-    };
+      return {
+        products: paginatedProducts,
+        pagination: {
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          total: filteredProducts.length,
+          totalPages: Math.ceil(filteredProducts.length / pagination.pageSize)
+        },
+        filters: {
+          categories: activeCategories,
+          priceRange,
+          availableTags
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching catalog products:', error);
+      throw error;
+    }
   },
 
   // Get single product by ID
   async getProduct(id: number): Promise<Produto | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const product = mockProducts.find(p => p.id === id && p.status === 1);
-    return product || null;
+    try {
+      const response = await apiService.get<{ data: Produto }>(`/produtos/${id}`);
+      const product = response.data;
+      // Only return if product is active
+      return product && product.status === 1 ? product : null;
+    } catch (error) {
+      console.error(`Error fetching product ${id}:`, error);
+      return null;
+    }
   },
 
   // Get featured products
   async getFeaturedProducts(limit: number = 8): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Get products with high stock as featured products
-    return mockProducts
-      .filter(product => product.status === 1 && product.estoque > 10)
-      .sort((a, b) => b.estoque - a.estoque)
-      .slice(0, limit);
+    try {
+      const response = await apiService.get<{ data: Produto[] }>('/produtos');
+      const products = response.data || [];
+      
+      // Get products with high stock as featured products
+      return products
+        .filter(product => product.status === 1 && product.estoque > 10)
+        .sort((a, b) => b.estoque - a.estoque)
+        .slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      return [];
+    }
   },
 
   // Get products by category
   async getProductsByCategory(categoryId: number, limit?: number): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    let products = mockProducts.filter(
-      product => product.fk_categoria_id === categoryId && product.status === 1
-    );
+    try {
+      const response = await apiService.get<{ data: Produto[] }>(`/produtos/categoria/${categoryId}`);
+      let products = (response.data || []).filter(product => product.status === 1);
 
-    if (limit) {
-      products = products.slice(0, limit);
+      if (limit) {
+        products = products.slice(0, limit);
+      }
+
+      return products;
+    } catch (error) {
+      console.error(`Error fetching products by category ${categoryId}:`, error);
+      return [];
     }
-
-    return products;
   },
 
   // Get related products (from same category)
   async getRelatedProducts(productId: number, limit: number = 4): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const product = mockProducts.find(p => p.id === productId);
-    if (!product) return [];
+    try {
+      const product = await this.getProduct(productId);
+      if (!product) return [];
 
-    return mockProducts
-      .filter(p => 
-        p.fk_categoria_id === product.fk_categoria_id && 
-        p.id !== productId && 
-        p.status === 1
-      )
-      .slice(0, limit);
+      const response = await apiService.get<{ data: Produto[] }>(`/produtos/categoria/${product.fk_categoria_id}`);
+      const products = response.data || [];
+      
+      return products
+        .filter(p => p.id !== productId && p.status === 1)
+        .slice(0, limit);
+    } catch (error) {
+      console.error(`Error fetching related products for ${productId}:`, error);
+      return [];
+    }
   },
 
   // Search products
   async searchProducts(query: string, limit: number = 10): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    if (!query.trim()) return [];
+    try {
+      if (!query.trim()) return [];
 
-    const searchLower = query.toLowerCase();
-    return mockProducts
-      .filter(product => 
-        product.status === 1 && (
-          product.nome.toLowerCase().includes(searchLower) ||
-          product.descricao?.toLowerCase().includes(searchLower) ||
-          product.tags?.toLowerCase().includes(searchLower)
+      const response = await apiService.get<{ data: Produto[] }>('/produtos');
+      const products = response.data || [];
+      
+      const searchLower = query.toLowerCase();
+      return products
+        .filter(product => 
+          product.status === 1 && (
+            product.nome.toLowerCase().includes(searchLower) ||
+            product.descricao?.toLowerCase().includes(searchLower) ||
+            product.tags?.toLowerCase().includes(searchLower)
+          )
         )
-      )
-      .slice(0, limit);
+        .slice(0, limit);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return [];
+    }
   },
 
   // Get all categories
   async getCategories(): Promise<Categoria[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    return mockCategories.filter(category => category.estaAtiva);
+    try {
+      const response = await apiService.get<{ data: Categoria[] }>('/categorias');
+      return (response.data || []).filter(category => category.estaAtiva);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
   },
 
   // Get category by ID
   async getCategory(id: number): Promise<Categoria | null> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const category = mockCategories.find(c => c.id === id && c.estaAtiva);
-    return category || null;
+    try {
+      const response = await apiService.get<{ data: Categoria }>(`/categorias/${id}`);
+      const category = response.data;
+      return category && category.estaAtiva ? category : null;
+    } catch (error) {
+      console.error(`Error fetching category ${id}:`, error);
+      return null;
+    }
   },
 
   // Get product recommendations based on customer's purchase history
   async getRecommendations(customerId?: number, limit: number = 6): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    // Mock implementation - in real app would use ML algorithms
-    // For now, just return best selling products
-    return mockProducts
-      .filter(product => product.status === 1 && product.estoque > 0)
-      .sort((a, b) => b.preco - a.preco) // Sort by price as proxy for popularity
-      .slice(0, limit);
+    try {
+      // Mock implementation - in real app would use ML algorithms
+      // For now, just return best selling products
+      const response = await apiService.get<{ data: Produto[] }>('/produtos');
+      const products = response.data || [];
+      
+      return products
+        .filter(product => product.status === 1 && product.estoque > 0)
+        .sort((a, b) => b.preco - a.preco) // Sort by price as proxy for popularity
+        .slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      return [];
+    }
   },
 
   // Get products on sale/promotion
@@ -262,14 +301,20 @@ export const catalogService = {
 
   // Get new products (recently added)
   async getNewProducts(limit: number = 6): Promise<Produto[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Mock implementation - in real app would sort by creation date
-    // For now, return products with higher IDs
-    return mockProducts
-      .filter(product => product.status === 1)
-      .sort((a, b) => b.id - a.id)
-      .slice(0, limit);
+    try {
+      const response = await apiService.get<{ data: Produto[] }>('/produtos');
+      const products = response.data || [];
+      
+      // Mock implementation - in real app would sort by creation date
+      // For now, return products with higher IDs
+      return products
+        .filter(product => product.status === 1)
+        .sort((a, b) => b.id - a.id)
+        .slice(0, limit);
+    } catch (error) {
+      console.error('Error fetching new products:', error);
+      return [];
+    }
   },
 
   // Check product availability
@@ -278,18 +323,21 @@ export const catalogService = {
     stock: number;
     maxQuantity: number;
   }> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const product = mockProducts.find(p => p.id === productId);
-    
-    if (!product || product.status !== 1) {
+    try {
+      const product = await this.getProduct(productId);
+      
+      if (!product || product.status !== 1) {
+        return { available: false, stock: 0, maxQuantity: 0 };
+      }
+
+      return {
+        available: product.estoque >= quantity,
+        stock: product.estoque,
+        maxQuantity: product.estoque
+      };
+    } catch (error) {
+      console.error(`Error checking availability for product ${productId}:`, error);
       return { available: false, stock: 0, maxQuantity: 0 };
     }
-
-    return {
-      available: product.estoque >= quantity,
-      stock: product.estoque,
-      maxQuantity: product.estoque
-    };
   }
 };

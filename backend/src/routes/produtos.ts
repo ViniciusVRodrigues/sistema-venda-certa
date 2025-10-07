@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ProdutoController } from '../controllers/ProdutoController';
 import { EnhancedProdutoController } from '../controllers/EnhancedProdutoController';
-import { produtoValidation } from '../middleware/validation';
+import { produtoValidation, produtoUpdateValidation } from '../middleware/validation';
 import { asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
@@ -252,7 +252,7 @@ router.post('/', produtoValidation, asyncHandler(ProdutoController.create));
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.put('/:id', produtoValidation, asyncHandler(ProdutoController.update));
+router.put('/:id', produtoUpdateValidation, asyncHandler(ProdutoController.update));
 
 /**
  * @swagger
