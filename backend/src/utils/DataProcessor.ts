@@ -60,11 +60,19 @@ export abstract class DataProcessor {
 // Implementação concreta para processamento de produtos
 export class ProdutoDataProcessor extends DataProcessor {
   protected performSpecificProcessing(data: any): any {
+    // Processar status: aceita tanto number quanto string
+    let status = 0;
+    if (typeof data.status === 'number') {
+      status = data.status;
+    } else if (typeof data.status === 'string') {
+      status = data.status === 'ativo' || data.status === '1' ? 1 : 0;
+    }
+
     return {
       ...data,
       preco: parseFloat(data.preco) || 0,
       estoque: parseInt(data.estoque) || 0,
-      status: data.status === 'ativo' ? 1 : 0,
+      status: status,
       processedBy: 'ProdutoDataProcessor'
     };
   }

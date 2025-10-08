@@ -21,8 +21,8 @@ export const LoginPage: React.FC = () => {
     try {
       await login(email, password, rememberMe);
       navigate(email.includes('admin') ? '/admin' : '/');
-    } catch (error: any) {
-      setError(error.message || 'Email ou senha inválidos');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Email ou senha inválidos');
     } finally {
       setIsLoading(false);
     }
@@ -60,24 +60,31 @@ export const LoginPage: React.FC = () => {
               <div className="grid grid-cols-1 gap-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => {setEmail('admin@email.com'); setPassword('123');}}
+                  onClick={() => {setEmail('ana@email.com'); setPassword('senha123');}}
                   className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
                 >
-                  👨‍💼 <strong>Admin:</strong> admin@email.com
+                  👨‍💼 <strong>Admin:</strong> ana@email.com
                 </button>
                 <button
                   type="button"
-                  onClick={() => {setEmail('carlos.entregador@email.com'); setPassword('123');}}
+                  onClick={() => {setEmail('pedro@email.com'); setPassword('senha123');}}
                   className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
                 >
-                  🚚 <strong>Entregador:</strong> carlos.entregador@email.com
+                  🚚 <strong>Entregador:</strong> pedro@email.com
                 </button>
                 <button
                   type="button"
-                  onClick={() => {setEmail('joao.silva@email.com'); setPassword('123');}}
+                  onClick={() => {setEmail('joao@email.com'); setPassword('senha123');}}
                   className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
                 >
-                  👤 <strong>Cliente:</strong> joao.silva@email.com
+                  👤 <strong>Cliente João:</strong> joao@email.com
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {setEmail('maria@email.com'); setPassword('senha123');}}
+                  className="text-left px-3 py-2 bg-white rounded border hover:bg-gray-50 transition-colors"
+                >
+                  👤 <strong>Cliente Maria:</strong> maria@email.com
                 </button>
               </div>
             </div>

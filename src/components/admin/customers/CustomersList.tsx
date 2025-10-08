@@ -3,7 +3,7 @@ import { useCustomers, useCustomerStats } from '../../../hooks/useCustomers';
 import { customersService } from '../../../services/admin/customersService';
 import { DataTable, type Column } from '../shared/DataTable';
 import { Drawer } from '../shared/Drawer';
-import { DeleteConfirmationModal, CustomerFormModal, type CustomerFormData } from '../shared/modals';
+import { DeleteConfirmationModal, CustomerFormModal, DataViewModal, type CustomerFormData } from '../shared/modals';
 import { Button, Card, Badge, Select } from '../../ui';
 import type { Usuario, Endereco } from '../../../types';
 
@@ -17,8 +17,10 @@ export const CustomersList: React.FC = () => {
   // Modal states
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDataViewOpen, setIsDataViewOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Usuario | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Usuario | null>(null);
+  const [viewingCustomer, setViewingCustomer] = useState<Usuario | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
 
   const {
@@ -117,6 +119,11 @@ export const CustomersList: React.FC = () => {
   const handleDeleteCustomer = (customer: Usuario) => {
     setDeletingCustomer(customer);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleViewCustomer = (customer: Usuario) => {
+    setViewingCustomer(customer);
+    setIsDataViewOpen(true);
   };
 
   const handleCustomerFormSubmit = async (formData: CustomerFormData) => {
@@ -227,12 +234,23 @@ export const CustomersList: React.FC = () => {
       title: 'Ações',
       width: '48',
       render: (_, record: Usuario) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewCustomer(record)}
+            title="Ver todos os campos"
+            className="text-blue-600 hover:text-blue-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => openCustomerDetails(record)}
-            title="Ver detalhes"
+            title="Ver detalhes completos"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -550,6 +568,17 @@ export const CustomersList: React.FC = () => {
             ? `Tem certeza que deseja excluir o cliente "${deletingCustomer.nome}"? Esta ação não pode ser desfeita.`
             : undefined
           }
+        />
+
+        {/* Data View Modal */}
+        <DataViewModal
+          isOpen={isDataViewOpen}
+          onClose={() => {
+            setIsDataViewOpen(false);
+            setViewingCustomer(null);
+          }}
+          title={viewingCustomer ? `Cliente: ${viewingCustomer.nome}` : 'Detalhes do Cliente'}
+          data={viewingCustomer ? (viewingCustomer as unknown as Record<string, unknown>) : {}}
         />
       </div>
     </div>

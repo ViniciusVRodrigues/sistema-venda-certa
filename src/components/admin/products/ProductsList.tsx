@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useProducts, useCategories } from '../../../hooks/useProducts';
 import { DataTable, type Column } from '../shared/DataTable';
-import { DeleteConfirmationModal, ProductFormModal, type ProductFormData } from '../shared/modals';
+import { DeleteConfirmationModal, ProductFormModal, DataViewModal, type ProductFormData } from '../shared/modals';
 import { Button, Card, Badge, Select } from '../../ui';
 import type { Produto } from '../../../types';
 
@@ -13,8 +13,10 @@ export const ProductsList: React.FC = () => {
   // Modal states
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDataViewOpen, setIsDataViewOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Produto | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Produto | null>(null);
+  const [viewingProduct, setViewingProduct] = useState<Produto | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
 
   const {
@@ -92,6 +94,11 @@ export const ProductsList: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const handleViewProduct = (product: Produto) => {
+    setViewingProduct(product);
+    setIsDataViewOpen(true);
+  };
+
   const handleProductFormSubmit = async (formData: ProductFormData) => {
     try {
       setIsFormLoading(true);
@@ -108,8 +115,10 @@ export const ProductsList: React.FC = () => {
         sku: formData.sku,
         tags: formData.tags,
         fk_categoria_id: formData.categoria.id,
-        // Converter string para Uint8Array se necessário
-        imagem: formData.imagem ? new TextEncoder().encode(formData.imagem) : undefined
+        // Converter string base64 para Uint8Array se necessário
+        imagem: formData.imagem ? 
+          new Uint8Array(atob(formData.imagem).split('').map(char => char.charCodeAt(0))) : 
+          undefined
       };
       
       if (editingProduct) {
@@ -235,7 +244,19 @@ export const ProductsList: React.FC = () => {
       title: 'Ações',
       width: '40',
       render: (_, record: Produto) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewProduct(record)}
+            title="Ver todos os campos"
+            className="text-blue-600 hover:text-blue-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -438,6 +459,17 @@ export const ProductsList: React.FC = () => {
             ? `Tem certeza que deseja excluir o produto "${deletingProduct.nome}"? Esta ação não pode ser desfeita.`
             : undefined
           }
+        />
+
+        {/* Data View Modal */}
+        <DataViewModal
+          isOpen={isDataViewOpen}
+          onClose={() => {
+            setIsDataViewOpen(false);
+            setViewingProduct(null);
+          }}
+          title={viewingProduct ? `Produto: ${viewingProduct.nome}` : 'Detalhes do Produto'}
+          data={viewingProduct ? (viewingProduct as unknown as Record<string, unknown>) : {}}
         />
       </div>
     </div>
