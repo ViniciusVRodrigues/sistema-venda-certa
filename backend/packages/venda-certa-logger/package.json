@@ -1,0 +1,24 @@
+{
+  "name": "@venda-certa/logger",
+  "version": "1.0.0",
+  "description": "Sistema de logging para o Venda Certa",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": ["logging", "venda-certa", "typescript"],
+  "author": "ViniciusVRodrigues",
+  "license": "MIT",
+  "dependencies": {
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist"
+  ]
+}

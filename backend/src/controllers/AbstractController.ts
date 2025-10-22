@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Logger } from '../utils/Logger';
+import { Logger } from '@venda-certa/logger';
 
 // Padrão Template Method - AbstractController
 export abstract class AbstractController {

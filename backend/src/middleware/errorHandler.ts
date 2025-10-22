@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Logger } from '../utils/Logger';
+import { Logger } from '@venda-certa/logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -25,15 +25,13 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  const logger = Logger.getInstance();
-  
   let { statusCode = 500, message } = err;
 
-  // Log do erro usando o Singleton Logger
+  // Log do erro
   if (statusCode >= 500) {
-    logger.error(`${req.method} ${req.path} - ${message} - Stack: ${err.stack}`);
+    Logger.error(`${req.method} ${req.path} - ${message} - Stack: ${err.stack}`);
   } else {
-    logger.warn(`${req.method} ${req.path} - ${message}`);
+    Logger.warn(`${req.method} ${req.path} - ${message}`);
   }
 
   if (process.env.NODE_ENV === 'production' && !err.isOperational) {

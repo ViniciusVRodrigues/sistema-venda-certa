@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { Logger } from '../utils/Logger';
+import { Logger } from '@venda-certa/logger';
 import { DatabaseConnection } from '../config/database';
 import { ProdutoDataProcessor, UsuarioDataProcessor } from '../utils/DataProcessor';
 import { ProdutoReportGenerator, PedidoReportGenerator } from '../utils/ReportGenerator';
@@ -255,11 +255,9 @@ export class PatternDemoController {
   private async testSingleton(action: string): Promise<any> {
     switch (action) {
       case 'logger':
-        const logger = Logger.getInstance();
-        logger.info('Teste do Logger Singleton');
+        Logger.info('Teste do Logger Singleton');
         return {
-          logsCount: logger.getLogs().length,
-          recentLogs: logger.getLogs().slice(-3)
+          message: 'Log gerado com sucesso'
         };
       case 'database':
         const db = DatabaseConnection.getInstance();

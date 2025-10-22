@@ -1,12 +1,11 @@
-import { Logger } from './Logger';
+import { Logger } from '@venda-certa/logger';
 
 // Padrão Template Method - Report Generation
 export abstract class ReportGenerator {
-  protected logger = Logger.getInstance();
 
   // Template method que define o algoritmo de geração de relatório
   public async generateReport(params: any): Promise<string> {
-    this.logger.info('Iniciando geração de relatório');
+    Logger.info('Iniciando geração de relatório');
 
     // 1. Validar parâmetros
     this.validateParameters(params);
@@ -23,7 +22,7 @@ export abstract class ReportGenerator {
     // 5. Aplicar cabeçalho e rodapé
     const finalReport = this.addHeaderAndFooter(formattedReport);
 
-    this.logger.info('Relatório gerado com sucesso');
+    Logger.info('Relatório gerado com sucesso');
     return finalReport;
   }
 

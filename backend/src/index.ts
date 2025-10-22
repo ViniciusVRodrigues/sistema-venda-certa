@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { DatabaseConnection } from './config/database';
-import { Logger } from './utils/Logger';
+import { Logger } from '@venda-certa/logger';
 import routes from './routes';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { specs, swaggerUi } from './config/swagger';
@@ -11,11 +11,17 @@ import { specs, swaggerUi } from './config/swagger';
 // Load environment variables
 dotenv.config();
 
+// Configure logger
+Logger.getInstance({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  filename: 'logs/app.log',
+  consoleOutput: true
+});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize singletons
-const logger = Logger.getInstance();
+// Initialize database connection
 const dbConnection = DatabaseConnection.getInstance();
 
 // Security middleware
@@ -30,7 +36,7 @@ app.use(cors({
 // Logging middleware - usando nosso Logger customizado
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'development') {
-    logger.info(`${req.method} ${req.path} - IP: ${req.ip}`);
+    Logger.info(`${req.method} ${req.path} - IP: ${req.ip}`);
   }
   next();
 });
@@ -77,7 +83,7 @@ app.use(errorHandler);
 // Database connection and server startup
 const startServer = async () => {
   try {
-    logger.info('🚀 Iniciando servidor...');
+    Logger.info('🚀 Iniciando servidor...');
     
     // Test database connection usando o Singleton
     await dbConnection.connect();
@@ -86,37 +92,37 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'development') {
       const sequelize = dbConnection.getSequelize();
       await sequelize.sync({ alter: false });
-      logger.info('📊 Modelos do banco sincronizados.');
+      Logger.info('📊 Modelos do banco sincronizados.');
     }
 
     // Start server
     app.listen(PORT, () => {
-      logger.info(`🚀 Servidor rodando na porta ${PORT}`);
-      logger.info(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
-      logger.info(`🔍 Health Check: http://localhost:${PORT}/api/health`);
-      logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      Logger.info(`🚀 Servidor rodando na porta ${PORT}`);
+      Logger.info(`📝 API Documentation: http://localhost:${PORT}/api/docs`);
+      Logger.info(`🔍 Health Check: http://localhost:${PORT}/api/health`);
+      Logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error: any) {
-    logger.error(`❌ Erro ao conectar com o banco de dados: ${error.message}`);
+    Logger.error(`❌ Erro ao conectar com o banco de dados: ${error.message}`);
     process.exit(1);
   }
 };
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err: Error) => {
-  logger.error(`❌ Unhandled Promise Rejection: ${err.message}`);
+  Logger.error(`❌ Unhandled Promise Rejection: ${err.message}`);
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: Error) => {
-  logger.error(`❌ Uncaught Exception: ${err.message}`);
+  Logger.error(`❌ Uncaught Exception: ${err.message}`);
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  logger.info('🛑 SIGTERM recebido. Encerrando servidor graciosamente...');
+  Logger.info('🛑 SIGTERM recebido. Encerrando servidor graciosamente...');
   await dbConnection.disconnect();
   process.exit(0);
 });

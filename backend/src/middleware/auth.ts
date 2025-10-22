@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Usuario } from '../models';
-import { Logger } from '../utils/Logger';
-
-const logger = Logger.getInstance();
+import { Logger } from '@venda-certa/logger';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -22,7 +20,7 @@ export const authenticateToken = async (
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    logger.warn(`Tentativa de acesso sem token - IP: ${req.ip} - Path: ${req.path}`);
+    Logger.warn(`Tentativa de acesso sem token - IP: ${req.ip} - Path: ${req.path}`);
     res.status(401).json({
       success: false,
       error: 'Token de acesso não fornecido'
@@ -38,7 +36,7 @@ export const authenticateToken = async (
     const usuario = await Usuario.findByPk(decoded.id);
     
     if (!usuario || usuario.status !== 1) {
-      logger.warn(`Token válido mas usuário inativo ou inexistente - User ID: ${decoded.id}`);
+      Logger.warn(`Token válido mas usuário inativo ou inexistente - User ID: ${decoded.id}`);
       res.status(401).json({
         success: false,
         error: 'Usuário inativo ou não encontrado'
@@ -53,10 +51,10 @@ export const authenticateToken = async (
       cargo: decoded.cargo
     };
 
-    logger.info(`Usuário autenticado - ID: ${decoded.id} - Email: ${decoded.email} - Path: ${req.path}`);
+    Logger.info(`Usuário autenticado - ID: ${decoded.id} - Email: ${decoded.email} - Path: ${req.path}`);
     next();
   } catch (error) {
-    logger.warn(`Token inválido - IP: ${req.ip} - Error: ${error}`);
+    Logger.warn(`Token inválido - IP: ${req.ip} - Error: ${error}`);
     res.status(401).json({
       success: false,
       error: 'Token inválido'
@@ -79,7 +77,7 @@ export const requireAdmin = (
   }
 
   if (req.user.cargo !== 'admin' && req.user.cargo !== 'administrador') {
-    logger.warn(`Tentativa de acesso admin negada - User ID: ${req.user.id} - Cargo: ${req.user.cargo}`);
+    Logger.warn(`Tentativa de acesso admin negada - User ID: ${req.user.id} - Cargo: ${req.user.cargo}`);
     res.status(403).json({
       success: false,
       error: 'Acesso negado. Privilégios de administrador necessários.'
@@ -87,7 +85,7 @@ export const requireAdmin = (
     return;
   }
 
-  logger.info(`Acesso admin autorizado - User ID: ${req.user.id} - Path: ${req.path}`);
+  Logger.info(`Acesso admin autorizado - User ID: ${req.user.id} - Path: ${req.path}`);
   next();
 };
 
@@ -107,7 +105,7 @@ export const requireDelivery = (
 
   const allowedRoles = ['entregador', 'admin', 'administrador'];
   if (!allowedRoles.includes(req.user.cargo)) {
-    logger.warn(`Tentativa de acesso entregador negada - User ID: ${req.user.id} - Cargo: ${req.user.cargo}`);
+    Logger.warn(`Tentativa de acesso entregador negada - User ID: ${req.user.id} - Cargo: ${req.user.cargo}`);
     res.status(403).json({
       success: false,
       error: 'Acesso negado. Privilégios de entregador necessários.'
@@ -115,7 +113,7 @@ export const requireDelivery = (
     return;
   }
 
-  logger.info(`Acesso entregador autorizado - User ID: ${req.user.id} - Path: ${req.path}`);
+  Logger.info(`Acesso entregador autorizado - User ID: ${req.user.id} - Path: ${req.path}`);
   next();
 };
 
@@ -138,7 +136,7 @@ export const requireOwnershipOrAdmin = (
   const isOwner = req.user.id === userId;
 
   if (!isOwner && !isAdmin) {
-    logger.warn(`Tentativa de acesso a dados de outro usuário negada - User ID: ${req.user.id} - Target ID: ${userId}`);
+    Logger.warn(`Tentativa de acesso a dados de outro usuário negada - User ID: ${req.user.id} - Target ID: ${userId}`);
     res.status(403).json({
       success: false,
       error: 'Acesso negado. Você só pode acessar seus próprios dados.'
@@ -146,7 +144,7 @@ export const requireOwnershipOrAdmin = (
     return;
   }
 
-  logger.info(`Acesso a dados próprios ou admin autorizado - User ID: ${req.user.id} - Target ID: ${userId}`);
+  Logger.info(`Acesso a dados próprios ou admin autorizado - User ID: ${req.user.id} - Target ID: ${userId}`);
   next();
 };
 

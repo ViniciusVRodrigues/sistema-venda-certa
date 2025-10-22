@@ -6,13 +6,12 @@ import { ProductSearchEngine, SearchStrategyFactory } from '../utils/SearchStrat
 import { PaymentProcessor, PaymentStrategyFactory } from '../utils/PaymentStrategy';
 import { DeliveryCalculator, DeliveryStrategyFactory } from '../utils/DeliveryStrategy';
 import { DatabaseConnection } from '../config/database';
-import { Logger } from '../utils/Logger';
+import { Logger } from '@venda-certa/logger';
 
 // Exemplo de uso dos padrões implementados
 export class EnhancedProdutoController extends AbstractController {
   private dataProcessor = new ProdutoDataProcessor();
   private reportGenerator = new ProdutoReportGenerator();
-  private appLogger = Logger.getInstance();
   private dbConnection = DatabaseConnection.getInstance();
 
   // Implementação do Template Method
@@ -69,7 +68,7 @@ export class EnhancedProdutoController extends AbstractController {
 
     const result = await searchEngine.search(query, options);
     
-    this.appLogger.info(`Busca executada: "${query}" - ${result.total} resultados em ${result.executionTime}ms`);
+    Logger.info(`Busca executada: "${query}" - ${result.total} resultados em ${result.executionTime}ms`);
     
     return result;
   }
@@ -80,10 +79,10 @@ export class EnhancedProdutoController extends AbstractController {
     
     try {
       const processedData = this.dataProcessor.processData(data);
-      this.appLogger.info('Dados processados com sucesso');
+      Logger.info('Dados processados com sucesso');
       return processedData;
     } catch (error: any) {
-      this.appLogger.error(`Erro no processamento de dados: ${error.message}`);
+      Logger.error(`Erro no processamento de dados: ${error.message}`);
       throw error;
     }
   }
@@ -94,10 +93,10 @@ export class EnhancedProdutoController extends AbstractController {
     
     try {
       const report = await this.reportGenerator.generateReport({ filtros });
-      this.appLogger.info('Relatório gerado com sucesso');
+      Logger.info('Relatório gerado com sucesso');
       return { report };
     } catch (error: any) {
-      this.appLogger.error(`Erro na geração do relatório: ${error.message}`);
+      Logger.error(`Erro na geração do relatório: ${error.message}`);
       throw error;
     }
   }
@@ -113,11 +112,11 @@ export class EnhancedProdutoController extends AbstractController {
       
       const result = await paymentProcessor.processPayment(amount, paymentData);
       
-      this.appLogger.info(`Pagamento processado: ${method} - ${result.success ? 'Sucesso' : 'Falha'}`);
+      Logger.info(`Pagamento processado: ${method} - ${result.success ? 'Sucesso' : 'Falha'}`);
       
       return result;
     } catch (error: any) {
-      this.appLogger.error(`Erro no processamento do pagamento: ${error.message}`);
+      Logger.error(`Erro no processamento do pagamento: ${error.message}`);
       throw error;
     }
   }
@@ -133,11 +132,11 @@ export class EnhancedProdutoController extends AbstractController {
       
       const result = deliveryCalculator.calculateDelivery(distance, weight, urgency);
       
-      this.appLogger.info(`Cálculo de entrega: ${method} - Taxa: R$ ${result.fee}`);
+      Logger.info(`Cálculo de entrega: ${method} - Taxa: R$ ${result.fee}`);
       
       return result;
     } catch (error: any) {
-      this.appLogger.error(`Erro no cálculo de entrega: ${error.message}`);
+      Logger.error(`Erro no cálculo de entrega: ${error.message}`);
       throw error;
     }
   }
@@ -180,8 +179,7 @@ export class EnhancedProdutoController extends AbstractController {
     
     console.log('Logger instances são iguais:', logger1 === logger2);
     
-    logger1.info('Teste do padrão Singleton - Logger');
-    console.log('Logs atuais:', logger2.getLogs().length);
+    Logger.info('Teste do padrão Singleton - Logger');
     
     // Database Singleton
     const db1 = DatabaseConnection.getInstance();
@@ -197,7 +195,7 @@ export class EnhancedProdutoController extends AbstractController {
   public async demonstratePatterns(req: Request, res: Response): Promise<void> {
     try {
       // 1. Singleton - Logger
-      this.appLogger.info('Demonstração iniciada');
+      Logger.info('Demonstração iniciada');
       
       // 2. Template Method - usando o controller
       await this.handleRequest(req, res);
@@ -211,14 +209,14 @@ export class EnhancedProdutoController extends AbstractController {
           const searchEngine = new ProductSearchEngine(strategy);
           const result = await searchEngine.search(req.body.searchQuery, { limit: 5 });
           
-          this.appLogger.info(`${strategyType}: ${result.total} resultados em ${result.executionTime}ms`);
+          Logger.info(`${strategyType}: ${result.total} resultados em ${result.executionTime}ms`);
         }
       }
       
-      this.appLogger.info('Demonstração concluída');
+      Logger.info('Demonstração concluída');
       
     } catch (error: any) {
-      this.appLogger.error(`Erro na demonstração: ${error.message}`);
+      Logger.error(`Erro na demonstração: ${error.message}`);
       throw error;
     }
   }
