@@ -6,6 +6,7 @@ export interface Usuario {
   cargo: string;
   numeroCelular?: string;
   status: number; // TINYINT
+  senha: string;
   totalPedidos: number;
   totalGasto: number; // DECIMAL(10,2)
   entregasFeitas: number;

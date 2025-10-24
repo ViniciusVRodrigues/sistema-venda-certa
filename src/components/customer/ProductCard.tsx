@@ -62,8 +62,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const getPrice = () => {
     // Versão simplificada sem variações (produto não tem variações no database_schema)
+    const price = typeof product.preco === 'string' ? parseFloat(product.preco) : product.preco;
     return {
-      price: product.preco,
+      price: isNaN(price) ? 0 : price,
       isVariation: false
     };
   };

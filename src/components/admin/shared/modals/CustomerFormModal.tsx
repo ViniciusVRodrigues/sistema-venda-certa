@@ -14,6 +14,7 @@ export interface CustomerFormData {
   name: string;
   email: string;
   phone: string;
+  password: string;
   role: 'customer';
   isVip: boolean;
   isBlocked: boolean;
@@ -31,6 +32,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     name: '',
     email: '',
     phone: '',
+    password: '',
     role: 'customer',
     isVip: false,
     isBlocked: false,
@@ -57,6 +59,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         name: customer.nome,
         email: customer.email,
         phone: customer.numeroCelular || '',
+        password: '',
         role: 'customer',
         isVip: customer.isVip || false,
         isBlocked: customer.isBlocked || false,
@@ -83,6 +86,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
         name: '',
         email: '',
         phone: '',
+        password: '',
         role: 'customer',
         isVip: false,
         isBlocked: false,
@@ -104,6 +108,9 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+    if (!formData.password.trim() && !customer) {
+      newErrors.password = 'Senha é obrigatória';
+    }
 
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
@@ -256,6 +263,16 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
                 placeholder="email@exemplo.com"
+              />
+            </div>
+            <div>
+              <Input
+                label="Senha *"
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                error={errors.password}
+                placeholder="Digite a senha"
               />
             </div>
           </div>

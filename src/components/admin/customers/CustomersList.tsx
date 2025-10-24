@@ -135,7 +135,8 @@ export const CustomersList: React.FC = () => {
         nome: formData.name,
         email: formData.email,
         numeroCelular: formData.phone,
-        cargo: 'customer',
+        senha: formData.password, // Envia como 'senha' para o backend
+        cargo: 'cliente',
         status: 1, // Ativo por padrão
         totalPedidos: 0,
         totalGasto: 0,
@@ -382,6 +383,7 @@ export const CustomersList: React.FC = () => {
         <DataTable
           columns={columns}
           data={customers}
+          rowKey="id"
           loading={loading}
           pagination={pagination || undefined}
           onPageChange={setPage}

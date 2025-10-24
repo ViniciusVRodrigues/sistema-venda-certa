@@ -7,8 +7,9 @@ export class UsuarioController extends AbstractController {
   // GET /api/usuarios - usando Template Method
   static async getAll(req: Request, res: Response) {
     const controller = new UsuarioController();
-    controller.processRequest = async () => {
+    controller.processRequest = async (req: Request) => {
       return await Usuario.findAll({
+        where: { cargo: 'cliente' },
         include: [
           { model: Endereco, as: 'enderecos' },
         ],
@@ -44,14 +45,19 @@ export class UsuarioController extends AbstractController {
   // POST /api/usuarios - usando Template Method
   static async create(req: Request, res: Response) {
     const controller = new UsuarioController();
-
     controller.validateRequest = (req: Request): boolean => {
       const errors = validationResult(req);
       return errors.isEmpty();
     };
 
     controller.processRequest = async (req: Request) => {
-      return await Usuario.create(req.body);
+      const bcrypt = require('bcryptjs');
+      const { senha, ...rest } = req.body;
+      if (!senha) {
+        throw new Error('Senha é obrigatória');
+      }
+      const senhaHash = await bcrypt.hash(senha, 10);
+      return await Usuario.create({ ...rest, senha: senhaHash });
     };
 
     controller.handleValidationError = (req: Request, res: Response): void => {

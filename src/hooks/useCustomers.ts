@@ -47,7 +47,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFiltersState] = useState<FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' }>(initialFilters);
+  const [filters, setFiltersState] = useState<FilterOptions & { status?: 'active' | 'blocked' }>(initialFilters);
   const [sort, setSortState] = useState<SortOption>(initialSort);
   const [paginationState, setPaginationState] = useState(initialPagination);
 
@@ -56,7 +56,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
       setLoading(true);
       setError(null);
       
-      const response = await customersService.getCustomers(filters, paginationState, sort);
+  const response = await customersService.getCustomers(filters, paginationState, sort);
       setCustomers(response.customers);
       setPagination(response.pagination);
     } catch (err) {
@@ -67,7 +67,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
   }, [filters, paginationState, sort]);
 
   const setFilters = useCallback((newFilters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' }) => {
-    setFiltersState(newFilters);
+  setFiltersState(newFilters);
     setPaginationState(prev => ({ ...prev, page: 1 })); // Reset to first page
   }, []);
 

@@ -1,4 +1,9 @@
 import type { Usuario, Endereco, Pedido, FilterOptions, PaginationData, SortOption } from '../../types';
+
+// Interface para aceitar o campo password no cadastro de cliente
+interface CustomerCreateData extends Partial<Usuario> {
+  password?: string;
+}
 import { apiService } from '../api';
 
 interface CustomersResponse {
@@ -9,96 +14,29 @@ interface CustomersResponse {
 export const customersService = {
   // Get all customers with filters, pagination and sorting
   async getCustomers(
-    filters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' } = {},
+    filters: FilterOptions & { status?: 'active' | 'blocked' } = {},
     pagination: { page: number; pageSize: number } = { page: 1, pageSize: 10 },
-    sort: SortOption = { field: 'totalGasto', direction: 'desc' }
+    sort: SortOption = { field: 'id', direction: 'desc' }
   ): Promise<CustomersResponse> {
     try {
-      const response = await apiService.get<{ data: Usuario[] }>('/usuarios');
-      let filteredCustomers = (response.data || []).filter(usuario => usuario.cargo === 'customer');
+      const queryParams = new URLSearchParams({
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+        sortField: sort.field,
+        sortDirection: sort.direction.toUpperCase(),
+        ...(filters.search ? { search: filters.search } : {}),
+        ...(filters.status ? { status: filters.status } : {})
+      });
 
-    // Apply search filter (nome, email, numeroCelular)
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredCustomers = filteredCustomers.filter(customer =>
-        customer.nome.toLowerCase().includes(searchLower) ||
-        customer.email.toLowerCase().includes(searchLower) ||
-        customer.numeroCelular?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply VIP filter (based on nota >= 4.5)
-    if (filters.vipOnly) {
-      filteredCustomers = filteredCustomers.filter(customer => customer.nota && customer.nota >= 4.5);
-    }
-
-    // Apply status filter
-    if (filters.status) {
-      if (filters.status === 'active') {
-        filteredCustomers = filteredCustomers.filter(customer => customer.status === 1);
-      } else if (filters.status === 'blocked') {
-        filteredCustomers = filteredCustomers.filter(customer => customer.status === 0);
-      }
-    }
-
-    // Note: dateRange filter cannot be implemented as createdAt doesn't exist in database schema
-    // This would need to be added to the database schema if required
-
-    // Apply sorting
-    filteredCustomers.sort((a, b) => {
-      const { field, direction } = sort;
-      let aValue: string | number, bValue: string | number;
-
-      switch (field) {
-        case 'nome':
-        case 'name':
-          aValue = a.nome;
-          bValue = b.nome;
-          break;
-        case 'email':
-          aValue = a.email;
-          bValue = b.email;
-          break;
-        case 'totalPedidos':
-        case 'totalOrders':
-          aValue = a.totalPedidos;
-          bValue = b.totalPedidos;
-          break;
-        case 'totalGasto':
-        case 'totalSpent':
-          aValue = a.totalGasto;
-          bValue = b.totalGasto;
-          break;
-        case 'nota':
-          aValue = a.nota || 0;
-          bValue = b.nota || 0;
-          break;
-        default:
-          aValue = a.nome;
-          bValue = b.nome;
-      }
-
-      if (direction === 'asc') {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-
-    // Apply pagination
-    const startIndex = (pagination.page - 1) * pagination.pageSize;
-    const endIndex = startIndex + pagination.pageSize;
-    const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
-
-      return {
-        customers: paginatedCustomers,
-        pagination: {
-          page: pagination.page,
-          pageSize: pagination.pageSize,
-          total: filteredCustomers.length,
-          totalPages: Math.ceil(filteredCustomers.length / pagination.pageSize)
-        }
+      const response = await apiService.get<{ success: boolean, data?: Usuario[], pagination?: PaginationData }>(`/usuarios?${queryParams.toString()}`);
+      const customers = Array.isArray(response.data) ? response.data : response.data?.data ?? [];
+      const paginationResult = response.data?.pagination ?? {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total: customers.length,
+        totalPages: Math.ceil(customers.length / pagination.pageSize)
       };
+      return { customers, pagination: paginationResult };
     } catch (error) {
       console.error('Error fetching customers:', error);
       throw error;
@@ -117,7 +55,7 @@ export const customersService = {
   },
 
   // Create new customer
-  async createCustomer(customerData: Partial<Usuario>): Promise<Usuario> {
+  async createCustomer(customerData: CustomerCreateData): Promise<Usuario> {
     try {
       const newCustomerData = {
         ...customerData,
@@ -125,8 +63,10 @@ export const customersService = {
         status: customerData.status !== undefined ? customerData.status : 1,
         totalPedidos: customerData.totalPedidos || 0,
         totalGasto: customerData.totalGasto || 0,
-        entregasFeitas: 0
+        entregasFeitas: 0,
+        senha: customerData.password // Envia senha do formulário
       };
+      //Printando o objeto que vai ser enviado
       const response = await apiService.post<{ data: Usuario }>('/usuarios', newCustomerData);
       return response.data!;
     } catch (error) {
@@ -207,8 +147,9 @@ export const customersService = {
     totalRevenue: number;
   }> {
     try {
-      const response = await apiService.get<{ data: Usuario[] }>('/usuarios');
-      const customers = (response.data || []).filter(usuario => usuario.cargo === 'customer');
+  const response = await apiService.get<{ data?: { customers?: Usuario[], data?: Usuario[] } }>('/usuarios');
+  const customersArr = response.data?.customers ?? response.data?.data ?? [];
+  const customers = customersArr.filter((usuario: Usuario) => usuario.cargo === 'customer');
 
       const stats = customers.reduce(
         (acc, customer) => {
