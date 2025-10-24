@@ -1,5 +1,6 @@
 import type { Produto, Categoria, FilterOptions, PaginationData, SortOption } from '../../types';
 import { apiService } from '../api';
+import { normalizeProduto, normalizeProdutos } from '../../utils/format';
 
 interface ProductsResponse {
   products: Produto[];
@@ -15,7 +16,10 @@ export const productsService = {
   ): Promise<ProductsResponse> {
     try {
       const response = await apiService.get<{ data: Produto[] }>('/produtos');
-      let filteredProducts = response.data || [];
+      let rawProducts = response.data || [];
+      
+      // Normalize all products to ensure numeric fields are numbers
+      let filteredProducts = normalizeProdutos(rawProducts);
 
     // Apply search filter (nome, sku, tags)
     if (filters.search) {
@@ -115,7 +119,8 @@ export const productsService = {
   async getProduct(id: number): Promise<Produto | null> {
     try {
       const response = await apiService.get<{ data: Produto }>(`/produtos/${id}`);
-      return response.data || null;
+      const productData = response.data || null;
+      return productData ? normalizeProduto(productData) : null;
     } catch (error) {
       console.error(`Error fetching product ${id}:`, error);
       return null;
@@ -234,7 +239,8 @@ export const productsService = {
   }> {
     try {
       const response = await apiService.get<{ data: Produto[] }>('/produtos');
-      const products = response.data || [];
+      const rawProducts = response.data || [];
+      const products = normalizeProdutos(rawProducts);
 
       const stats = products.reduce(
         (acc, product) => {
@@ -271,7 +277,8 @@ export const productsService = {
   async getLowStockProducts(threshold: number = 10): Promise<Produto[]> {
     try {
       const response = await apiService.get<{ data: Produto[] }>('/produtos');
-      const products = response.data || [];
+      const rawProducts = response.data || [];
+      const products = normalizeProdutos(rawProducts);
       
       return products.filter(product => 
         product.estoque > 0 && product.estoque <= threshold && product.status === 1

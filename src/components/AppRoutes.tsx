@@ -41,8 +41,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/login"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
-                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' || user?.cargo === 'administrador' ? '/admin' : 
+                          user?.cargo === 'delivery' || user?.cargo === 'entregador' ? '/delivery' : '/'} replace />
           ) : (
             <LoginPage />
           )
@@ -52,8 +52,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/register"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
-                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' || user?.cargo === 'administrador' ? '/admin' : 
+                          user?.cargo === 'delivery' || user?.cargo === 'entregador' ? '/delivery' : '/'} replace />
           ) : (
             <RegisterPage />
           )
@@ -163,7 +163,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryDashboardPage />
             </Layout>
@@ -174,7 +174,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/orders"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryOrdersPage />
             </Layout>
@@ -185,7 +185,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/history"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryHistoryPage />
             </Layout>

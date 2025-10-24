@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card, Input, Select, LoadingSpinner, Badge } from '../../components/ui';
 import { useCustomerOrders } from '../../hooks/customer/useCustomerOrders';
 import type { Pedido } from '../../types';
+import { formatCurrencyBR } from '../../utils/format';
 
 export const CustomerOrdersPage: React.FC = () => {
   const {
@@ -250,7 +251,7 @@ export const CustomerOrdersPage: React.FC = () => {
 
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-gray-600">
-                          Subtotal: R$ {order.subtotal.toFixed(2)}
+                          Subtotal: {formatCurrencyBR(order.subtotal)}
                         </p>
                         <Button
                           variant="outline"

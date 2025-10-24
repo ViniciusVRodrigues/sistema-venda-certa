@@ -1,5 +1,6 @@
 import type { Produto, AvaliacaoProduto, Usuario } from '../../types';
 import { apiService } from '../api';
+import { normalizeProduto, normalizeProdutos } from '../../utils/format';
 
 export interface ProductDetailsResponse {
   product: Produto;
@@ -24,8 +25,11 @@ export const productDetailsService = {
     try {
       const productResponse = await apiService.get<Produto>(`/produtos/${produtoId}`);
       // Backend returns { success: true, data: Produto }
-      const product = (productResponse as any).data || productResponse;
-      if (!product) return null;
+      const productData = (productResponse as any).data || productResponse;
+      if (!productData) return null;
+      
+      // Normalize numeric fields to ensure they're numbers, not strings
+      const product = normalizeProduto(productData);
 
       // Buscar avaliações desse produto
       const reviewsResponse = await apiService.get<AvaliacaoProduto[]>(`/produtos/${produtoId}/avaliacoes`);
@@ -52,9 +56,12 @@ export const productDetailsService = {
       // Produtos relacionados: mesma categoria, exceto o atual
       const relatedResponse = await apiService.get<Produto[]>(`/produtos/categoria/${product.fk_categoria_id}`);
       const relatedData = (relatedResponse as any).data || relatedResponse || [];
-      const relatedProducts = Array.isArray(relatedData) ? relatedData
+      const relatedProductsRaw = Array.isArray(relatedData) ? relatedData
         .filter((p: Produto) => p.id !== produtoId)
         .slice(0, 4) : [];
+      
+      // Normalize related products as well
+      const relatedProducts = normalizeProdutos(relatedProductsRaw);
 
       return {
         product,

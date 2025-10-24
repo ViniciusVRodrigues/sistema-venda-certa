@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui';
 import { useProfile } from '../../hooks/customer/useProfile';
 import { useCustomerOrders } from '../../hooks/customer/useCustomerOrders';
+import { formatCurrencyBR } from '../../utils/format';
 
 export const CustomerMenuPage: React.FC = () => {
   const { profile, stats } = useProfile();
@@ -64,14 +65,14 @@ export const CustomerMenuPage: React.FC = () => {
             
             <Card className="p-6">
               <div className="text-2xl font-bold text-green-600">
-                R$ {stats.totalSpent.toFixed(2)}
+                {formatCurrencyBR(stats.totalSpent)}
               </div>
               <div className="text-sm text-gray-600">Total Gasto</div>
             </Card>
             
             <Card className="p-6">
               <div className="text-2xl font-bold text-green-600">
-                R$ {stats.averageOrderValue.toFixed(2)}
+                {formatCurrencyBR(stats.averageOrderValue)}
               </div>
               <div className="text-sm text-gray-600">Ticket Médio</div>
             </Card>

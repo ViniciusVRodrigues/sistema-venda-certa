@@ -4,6 +4,7 @@ import { Button, Card } from '../../components/ui';
 import { useCart } from '../../context/CartContext';
 import { QuantitySelector } from '../customer/ProductDetailPage';
 import type { CartItem } from '../../types';
+import { formatCurrencyBR } from '../../utils/format';
 
 // Cart Summary Component
 interface CartSummaryProps {
@@ -30,13 +31,13 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           <span className="text-gray-600">
             Subtotal ({itemCount} item{itemCount !== 1 ? 's' : ''})
           </span>
-          <span className="font-medium">R$ {subtotal.toFixed(2)}</span>
+          <span className="font-medium">{formatCurrencyBR(subtotal)}</span>
         </div>
         
         {deliveryFee > 0 && (
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Frete</span>
-            <span className="font-medium">R$ {deliveryFee.toFixed(2)}</span>
+            <span className="font-medium">{formatCurrencyBR(deliveryFee)}</span>
           </div>
         )}
         
@@ -44,7 +45,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         
         <div className="flex justify-between items-center text-lg font-semibold">
           <span>Total</span>
-          <span className="text-green-700">R$ {total.toFixed(2)}</span>
+          <span className="text-green-700">{formatCurrencyBR(total)}</span>
         </div>
       </div>
 
@@ -217,7 +218,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center space-x-4">
               <div className="text-lg font-medium text-gray-900">
-                R$ {itemPrice.toFixed(2)}
+                {formatCurrencyBR(itemPrice)}
                 <span className="text-sm text-gray-500 font-normal">
                   /{item.product.unit}
                 </span>
@@ -234,7 +235,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({
 
             <div className="text-right">
               <div className="text-lg font-semibold text-green-700">
-                R$ {subtotal.toFixed(2)}
+                {formatCurrencyBR(subtotal)}
               </div>
               {maxQuantity <= 5 && (
                 <div className="text-xs text-orange-600">
