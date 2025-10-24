@@ -163,7 +163,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryDashboardPage />
             </Layout>
@@ -174,7 +174,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/orders"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryOrdersPage />
             </Layout>
@@ -185,7 +185,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/delivery/history"
         element={
-          <ProtectedRoute requireRole="entregador">
+          <ProtectedRoute requireRole="delivery">
             <Layout showFooter={false}>
               <DeliveryHistoryPage />
             </Layout>

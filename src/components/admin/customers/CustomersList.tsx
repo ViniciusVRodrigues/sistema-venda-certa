@@ -136,7 +136,7 @@ export const CustomersList: React.FC = () => {
         email: formData.email,
         numeroCelular: formData.phone,
         senha: formData.password, // Envia como 'senha' para o backend
-        cargo: 'cliente',
+        cargo: 'customer', // Backend validation expects 'customer'
         status: 1, // Ativo por padrão
         totalPedidos: 0,
         totalGasto: 0,

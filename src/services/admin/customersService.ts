@@ -59,7 +59,7 @@ export const customersService = {
     try {
       const newCustomerData = {
         ...customerData,
-        cargo: 'cliente', // Backend expects 'cliente'
+        cargo: 'customer', // Backend validation expects 'customer', 'admin', or 'delivery'
         status: customerData.status !== undefined ? customerData.status : 1,
         totalPedidos: customerData.totalPedidos || 0,
         totalGasto: customerData.totalGasto || 0,
@@ -79,7 +79,7 @@ export const customersService = {
     try {
       const updateData = {
         ...updates,
-        cargo: 'cliente' // Backend expects 'cliente'
+        cargo: 'customer' // Backend validation expects 'customer', 'admin', or 'delivery'
       };
       const response = await apiService.put<{ data: Usuario }>(`/usuarios/${id}`, updateData);
       return response.data || null;
@@ -148,7 +148,7 @@ export const customersService = {
     try {
   const response = await apiService.get<{ data?: { customers?: Usuario[], data?: Usuario[] } }>('/usuarios');
   const customersArr = response.data?.customers ?? response.data?.data ?? [];
-  const customers = customersArr.filter((usuario: Usuario) => usuario.cargo === 'cliente'); // Backend returns 'cliente'
+  const customers = customersArr.filter((usuario: Usuario) => usuario.cargo === 'customer'); // Backend stores 'customer' in database
 
       const stats = customers.reduce(
         (acc, customer) => {
