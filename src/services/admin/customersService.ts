@@ -103,25 +103,6 @@ export const customersService = {
     }
   },
 
-  // Toggle customer VIP status (based on nota)
-  async toggleVipStatus(id: number): Promise<Usuario | null> {
-    try {
-      const customer = await this.getCustomer(id);
-      if (!customer) {
-        return null;
-      }
-
-      // VIP logic: if nota >= 4.5 set to 3.0, if nota < 4.5 set to 5.0
-      const isCurrentlyVip = customer.nota && customer.nota >= 4.5;
-      const newNota = isCurrentlyVip ? 3.0 : 5.0;
-
-      return this.updateCustomer(id, { nota: newNota });
-    } catch (error) {
-      console.error(`Error toggling VIP status ${id}:`, error);
-      return null;
-    }
-  },
-
   // Toggle customer blocked status
   async toggleBlockedStatus(id: number): Promise<Usuario | null> {
     try {
@@ -143,7 +124,6 @@ export const customersService = {
     total: number;
     active: number;
     blocked: number;
-    vip: number;
     newThisMonth: number;
     averageTicket: number;
     totalRevenue: number;
@@ -158,7 +138,6 @@ export const customersService = {
           acc.total++;
           if (customer.status === 1) acc.active++;
           if (customer.status === 0) acc.blocked++;
-          if (customer.nota && customer.nota >= 4.5) acc.vip++;
           acc.totalRevenue += customer.totalGasto;
           return acc;
         },
@@ -166,7 +145,6 @@ export const customersService = {
           total: 0,
           active: 0,
           blocked: 0,
-          vip: 0,
           newThisMonth: 0,
           totalRevenue: 0
         }
@@ -186,7 +164,6 @@ export const customersService = {
         total: 0,
         active: 0,
         blocked: 0,
-        vip: 0,
         newThisMonth: 0,
         averageTicket: 0,
         totalRevenue: 0

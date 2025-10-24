@@ -9,7 +9,6 @@ import type { Usuario, Endereco } from '../../../types';
 
 export const CustomersList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [vipFilter, setVipFilter] = useState<boolean>(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Usuario | null>(null);
   const [customerAddresses, setCustomerAddresses] = useState<Endereco[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -33,7 +32,6 @@ export const CustomersList: React.FC = () => {
     setFilters,
     setSort,
     setPage,
-    updateVipStatus,
     updateBlockedStatus,
     createCustomer,
     updateCustomer,
@@ -49,11 +47,6 @@ export const CustomersList: React.FC = () => {
   const handleStatusFilter = (status: string) => {
     setStatusFilter(status);
     setFilters({ ...currentFilters, status: status as 'active' | 'blocked' || undefined });
-  };
-
-  const handleVipFilter = (vipOnly: boolean) => {
-    setVipFilter(vipOnly);
-    setFilters({ ...currentFilters, vipOnly: vipOnly || undefined });
   };
 
   const openCustomerDetails = async (customer: Usuario) => {
@@ -73,21 +66,6 @@ export const CustomersList: React.FC = () => {
   const closeCustomerDetails = () => {
     setSelectedCustomer(null);
     setIsDrawerOpen(false);
-  };
-
-  const handleToggleVip = async (customerId: number, currentVipStatus: boolean) => {
-    try {
-      await updateVipStatus(customerId, !currentVipStatus);
-      // Refresh customer details if the same customer is selected
-      if (selectedCustomer && selectedCustomer.id === customerId) {
-        const updatedCustomer = customers.find(c => c.id === customerId);
-        if (updatedCustomer) {
-          setSelectedCustomer(updatedCustomer);
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao alterar status VIP:', error);
-    }
   };
 
   const handleToggleBlocked = async (customerId: number, currentBlockedStatus: boolean) => {
@@ -173,9 +151,6 @@ export const CustomersList: React.FC = () => {
   const getStatusBadge = (customer: Usuario) => {
     if (customer.status === 0) {
       return <Badge variant="danger">Bloqueado</Badge>;
-    }
-    if (customer.nota && customer.nota >= 4.5) {
-      return <Badge variant="success">VIP</Badge>;
     }
     return <Badge variant="default">Ativo</Badge>;
   };
@@ -271,17 +246,6 @@ export const CustomersList: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleToggleVip(record.id, record.nota ? record.nota >= 4.5 : false)}
-            className={record.nota && record.nota >= 4.5 ? 'text-yellow-600' : 'text-gray-400'}
-            title={record.nota && record.nota >= 4.5 ? 'Remover VIP' : 'Tornar VIP'}
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={() => handleDeleteCustomer(record)}
             title="Excluir cliente"
             className="text-red-600 hover:text-red-700"
@@ -304,14 +268,6 @@ export const CustomersList: React.FC = () => {
           { value: '', label: 'Todos os status' },
           { value: 'active', label: 'Ativos' },
           { value: 'blocked', label: 'Bloqueados' }
-        ]}
-      />
-      <Select
-        value={vipFilter ? 'true' : 'false'}
-        onChange={(e) => handleVipFilter(e.target.value === 'true')}
-        options={[
-          { value: 'false', label: 'Todos os clientes' },
-          { value: 'true', label: 'Apenas VIPs' }
         ]}
       />
     </div>
@@ -364,12 +320,6 @@ export const CustomersList: React.FC = () => {
             </Card>
             <Card>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{stats.vip}</div>
-                <div className="text-sm text-gray-600">Clientes VIP</div>
-              </div>
-            </Card>
-            <Card>
-              <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">
                   {stats.averageTicket.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </div>
@@ -412,13 +362,6 @@ export const CustomersList: React.FC = () => {
             selectedCustomer && (
               <div className="flex justify-between">
                 <div className="flex space-x-2">
-                  <Button
-                    variant={selectedCustomer.nota && selectedCustomer.nota >= 4.5 ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => handleToggleVip(selectedCustomer.id, selectedCustomer.nota ? selectedCustomer.nota >= 4.5 : false)}
-                  >
-                    {selectedCustomer.nota && selectedCustomer.nota >= 4.5 ? 'Remover VIP' : 'Tornar VIP'}
-                  </Button>
                   <Button
                     variant={selectedCustomer.status === 0 ? 'primary' : 'danger'}
                     size="sm"
@@ -471,9 +414,6 @@ export const CustomersList: React.FC = () => {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center space-x-4">
                     {getStatusBadge(selectedCustomer)}
-                    {selectedCustomer.nota && selectedCustomer.nota >= 4.5 && (
-                      <Badge variant="warning">VIP</Badge>
-                    )}
                     {selectedCustomer.status === 0 && (
                       <Badge variant="danger">Bloqueado</Badge>
                     )}
