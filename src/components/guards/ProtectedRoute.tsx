@@ -34,9 +34,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requireRole) {
     const requiredRoles = Array.isArray(requireRole) ? requireRole : [requireRole];
     const hasRequiredRole = requiredRoles.some(role => {
-      // Handle different role formats
+      // Handle different role formats - backend seed uses Portuguese terms, validation uses English
       if (role === 'admin') {
         return user.cargo === 'admin' || user.cargo === 'administrador';
+      }
+      if (role === 'delivery') {
+        return user.cargo === 'delivery' || user.cargo === 'entregador';
+      }
+      if (role === 'cliente') {
+        return user.cargo === 'cliente' || user.cargo === 'customer';
+      }
+      if (role === 'customer') {
+        return user.cargo === 'cliente' || user.cargo === 'customer';
       }
       return user.cargo === role;
     });

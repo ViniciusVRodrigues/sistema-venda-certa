@@ -41,8 +41,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/login"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
-                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' || user?.cargo === 'administrador' ? '/admin' : 
+                          user?.cargo === 'delivery' || user?.cargo === 'entregador' ? '/delivery' : '/'} replace />
           ) : (
             <LoginPage />
           )
@@ -52,8 +52,8 @@ export const AppRoutes: React.FC = () => {
         path="/auth/register"
         element={
           isAuthenticated ? (
-            <Navigate to={user?.cargo === 'admin' ? '/admin' : 
-                          user?.cargo === 'delivery' ? '/delivery' : '/'} replace />
+            <Navigate to={user?.cargo === 'admin' || user?.cargo === 'administrador' ? '/admin' : 
+                          user?.cargo === 'delivery' || user?.cargo === 'entregador' ? '/delivery' : '/'} replace />
           ) : (
             <RegisterPage />
           )
