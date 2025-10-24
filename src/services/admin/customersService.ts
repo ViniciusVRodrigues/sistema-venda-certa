@@ -57,6 +57,9 @@ export const customersService = {
   // Create new customer
   async createCustomer(customerData: CustomerCreateData): Promise<Usuario> {
     try {
+      // Get password from either password field (CustomerFormData) or senha field (Usuario)
+      const senha = customerData.password ?? customerData.senha;
+      
       const newCustomerData = {
         ...customerData,
         cargo: 'customer', // Backend validation expects 'customer', 'admin', or 'delivery'
@@ -64,7 +67,7 @@ export const customersService = {
         totalPedidos: customerData.totalPedidos || 0,
         totalGasto: customerData.totalGasto || 0,
         entregasFeitas: 0,
-        senha: customerData.password // Envia senha do formulário
+        senha // Send password to backend
       };
       const response = await apiService.post<{ data: Usuario }>('/usuarios', newCustomerData);
       return response.data!;
