@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Button, Input } from '../ui';
 import type { Category } from '../../types';
 import type { CatalogFilters } from '../../services/customer/catalogService';
+import { formatCurrencyBR } from '../../utils/format';
 
 interface FiltersProps {
   filters: CatalogFilters;
@@ -131,7 +132,7 @@ export const FiltersPanel: React.FC<FiltersProps> = ({
             />
           </div>
           <div className="text-xs text-green-600 mt-1">
-            R$ {priceRange.min.toFixed(2)} - R$ {priceRange.max.toFixed(2)}
+            {formatCurrencyBR(priceRange.min)} - {formatCurrencyBR(priceRange.max)}
           </div>
         </div>
 

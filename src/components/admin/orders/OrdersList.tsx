@@ -5,6 +5,7 @@ import { Drawer } from '../shared/Drawer';
 import { DeleteConfirmationModal } from '../shared/modals';
 import { Button, Card, Badge, Select, Modal } from '../../ui';
 import type { Pedido } from '../../../types';
+import { formatCurrencyBR } from '../../../utils/format';
 
 export const OrdersList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -101,7 +102,7 @@ export const OrdersList: React.FC = () => {
           <body>
             <h1>Comprovante de Pedido</h1>
             <p>Pedido #${orderId}</p>
-            <p>Total: R$ ${order.total.toFixed(2)}</p>
+            <p>Total: ${formatCurrencyBR(order.total)}</p>
             <p>Status: ${getStatusText(order.status)}</p>
           </body>
         </html>
@@ -454,17 +455,17 @@ export const OrdersList: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">Subtotal</p>
-                        <p className="font-medium">R$ {selectedOrder.subtotal.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrencyBR(selectedOrder.subtotal)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Taxa de Entrega</p>
-                        <p className="font-medium">R$ {selectedOrder.taxaEntrega.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrencyBR(selectedOrder.taxaEntrega)}</p>
                       </div>
                     </div>
                     <div className="border-t mt-3 pt-3">
                       <div className="flex justify-between font-medium text-lg">
                         <span>Total:</span>
-                        <span>R$ {selectedOrder.total.toFixed(2)}</span>
+                        <span>{formatCurrencyBR(selectedOrder.total)}</span>
                       </div>
                     </div>
                   </div>
