@@ -25,6 +25,7 @@ import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { ProductsList } from '../components/admin/products/ProductsList';
 import { OrdersList } from '../components/admin/orders/OrdersList';
 import { CustomersList } from '../components/admin/customers/CustomersList';
+import { CategoriesList } from '../components/admin/categories/CategoriesList';
 
 // Delivery Pages
 import { DeliveryDashboardPage } from '../pages/delivery/DeliveryDashboardPage';
@@ -233,6 +234,17 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute requireRole={["admin", "administrador"]}>
             <Layout showFooter={false}>
               <CustomersList />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/admin/categories"
+        element={
+          <ProtectedRoute requireRole={["admin", "administrador"]}>
+            <Layout showFooter={false}>
+              <CategoriesList />
             </Layout>
           </ProtectedRoute>
         }
