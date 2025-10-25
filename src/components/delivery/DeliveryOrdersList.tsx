@@ -3,6 +3,7 @@ import { Card, LoadingSpinner, Badge, Modal, Button, Input, Select } from '../ui
 import { useAuth } from '../../context/AuthContext';
 import { deliveryOrderService, type PedidoCompleto } from '../../services/delivery/deliveryOrderService';
 import type { Pedido } from '../../types';
+import { formatCurrencyBR } from '../../utils/format';
 
 export const DeliveryOrdersList: React.FC = () => {
   const { user } = useAuth();
@@ -389,7 +390,7 @@ export const DeliveryOrdersList: React.FC = () => {
                       <p><strong>Estimativa:</strong> {selectedOrder.metodoEntrega.estimativaEntrega}</p>
                     )}
                     {selectedOrder.metodoEntrega?.preco && (
-                      <p><strong>Taxa de Entrega:</strong> R$ {selectedOrder.metodoEntrega.preco.toFixed(2)}</p>
+                      <p><strong>Taxa de Entrega:</strong> {formatCurrencyBR(selectedOrder.metodoEntrega.preco)}</p>
                     )}
                   </div>
                 </div>

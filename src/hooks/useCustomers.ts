@@ -4,7 +4,7 @@ import { customersService } from '../services/admin/customersService';
 
 interface UseCustomersOptions {
   autoFetch?: boolean;
-  initialFilters?: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' };
+  initialFilters?: FilterOptions & { status?: 'active' | 'blocked' };
   initialPagination?: { page: number; pageSize: number };
   initialSort?: SortOption;
 }
@@ -14,17 +14,16 @@ interface UseCustomersResult {
   pagination: PaginationData | null;
   loading: boolean;
   error: string | null;
-  filters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' };
+  filters: FilterOptions & { status?: 'active' | 'blocked' };
   sort: SortOption;
   
   // Actions
   fetchCustomers: () => Promise<void>;
-  setFilters: (filters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' }) => void;
+  setFilters: (filters: FilterOptions & { status?: 'active' | 'blocked' }) => void;
   setSort: (sort: SortOption) => void;
   setPage: (page: number) => void;
   
   // Customer operations
-  updateVipStatus: (customerId: number, isVip: boolean) => Promise<Usuario>;
   updateBlockedStatus: (customerId: number, isBlocked: boolean) => Promise<Usuario>;
   createCustomer: (customer: Omit<Usuario, 'id'>) => Promise<Usuario>;
   updateCustomer: (id: number, customer: Partial<Usuario>) => Promise<Usuario>;
@@ -66,7 +65,7 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     }
   }, [filters, paginationState, sort]);
 
-  const setFilters = useCallback((newFilters: FilterOptions & { vipOnly?: boolean; status?: 'active' | 'blocked' }) => {
+  const setFilters = useCallback((newFilters: FilterOptions & { status?: 'active' | 'blocked' }) => {
   setFiltersState(newFilters);
     setPaginationState(prev => ({ ...prev, page: 1 })); // Reset to first page
   }, []);
@@ -79,21 +78,6 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
   const setPage = useCallback((page: number) => {
     setPaginationState(prev => ({ ...prev, page }));
   }, []);
-
-  const updateVipStatus = useCallback(async (customerId: number) => {
-    try {
-      setLoading(true);
-      const updatedCustomer = await customersService.toggleVipStatus(customerId);
-      await fetchCustomers(); // Refresh the list
-      return updatedCustomer!;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar status VIP';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchCustomers]);
 
   const updateBlockedStatus = useCallback(async (customerId: number) => {
     try {
@@ -177,7 +161,6 @@ export const useCustomers = (options: UseCustomersOptions = {}): UseCustomersRes
     setFilters,
     setSort,
     setPage,
-    updateVipStatus,
     updateBlockedStatus,
     createCustomer,
     updateCustomer,
@@ -224,7 +207,6 @@ export const useCustomerStats = () => {
     total: number;
     active: number;
     blocked: number;
-    vip: number;
     newThisMonth: number;
     averageTicket: number;
     totalRevenue: number;

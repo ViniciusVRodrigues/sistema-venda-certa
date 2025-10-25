@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Produto } from '../../types';
 import { Button, Badge, Card } from '../ui';
 import { useCart } from '../../context/CartContext';
+import { formatCurrencyBR } from '../../utils/format';
 
 interface ProductCardProps {
   product: Produto;
@@ -72,12 +73,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { price, isVariation } = getPrice();
   const isAvailable = product.status === 1 && product.estoque > 0;
 
+  // Standard fallback image URL - same as ProductDetailPage
+  const mockImageUrl = 'https://images.unsplash.com/photo-1546470427-e26264be0b37?w=600';
+
   // Helper para converter imagem binária para base64
   const getImageSrc = () => {
-    if (product.imagem) {
-      return `data:image/jpeg;base64,${btoa(String.fromCharCode(...product.imagem))}`;
+    if (product.imagem && product.imagem.length > 0) {
+      return `data:image/jpeg;base64,${btoa(String.fromCharCode(...(product.imagem as any)))}`;
     }
-    return '/placeholder-product.jpg'; // imagem padrão
+    return mockImageUrl;
   };
 
   if (layout === 'list') {
@@ -124,7 +128,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <div className="flex items-center space-x-4">
                   <div className="text-lg font-bold text-green-700">
                     {isVariation && <span className="text-sm font-normal">a partir de </span>}
-                    R$ {price.toFixed(2)}
+                    {formatCurrencyBR(price)}
                     <span className="text-sm text-green-500 font-normal">
                       /{product.medida}
                     </span>
@@ -205,7 +209,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="mb-4">
             <div className={`font-bold text-green-700 ${variant === 'compact' ? 'text-base' : 'text-lg'}`}>
               {isVariation && <span className="text-xs font-normal">a partir de </span>}
-              R$ {price.toFixed(2)}
+              {formatCurrencyBR(price)}
               <span className={`text-green-500 font-normal ${variant === 'compact' ? 'text-xs' : 'text-sm'}`}>
                 /{product.medida}
               </span>

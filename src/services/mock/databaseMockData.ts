@@ -336,7 +336,7 @@ export const mockPedidos: Pedido[] = [
     total: 48.48,
     subtotal: 40.48,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Entrega pela manhã, se possível',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-21T10:00:00Z'),
@@ -353,7 +353,7 @@ export const mockPedidos: Pedido[] = [
     total: 73.97,
     subtotal: 58.97,
     taxaEntrega: 15.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: undefined,
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T16:00:00Z'),
@@ -388,7 +388,7 @@ export const mockPedidos: Pedido[] = [
     total: 89.75,
     subtotal: 74.75,
     taxaEntrega: 15.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Apartamento no 4º andar, interfone 45',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T18:00:00Z'),
@@ -405,7 +405,7 @@ export const mockPedidos: Pedido[] = [
     total: 34.49,
     subtotal: 26.49,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Entregar com o porteiro se não estiver em casa',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T19:30:00Z'),
@@ -422,7 +422,7 @@ export const mockPedidos: Pedido[] = [
     total: 56.90,
     subtotal: 48.90,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Cliente solicita produtos bem maduros',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T20:00:00Z'),
@@ -440,7 +440,7 @@ export const mockPedidos: Pedido[] = [
     total: 127.25,
     subtotal: 112.25,
     taxaEntrega: 15.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Casa com portão azul, cuidado com o cachorro',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T17:45:00Z'),
@@ -457,7 +457,7 @@ export const mockPedidos: Pedido[] = [
     total: 68.40,
     subtotal: 60.40,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: undefined,
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T15:00:00Z'),
@@ -474,7 +474,7 @@ export const mockPedidos: Pedido[] = [
     total: 43.50,
     subtotal: 35.50,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: undefined,
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T12:30:00Z'),
@@ -492,7 +492,7 @@ export const mockPedidos: Pedido[] = [
     total: 95.30,
     subtotal: 80.30,
     taxaEntrega: 15.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: 'Pedido especial para festa de aniversário',
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T21:00:00Z'),
@@ -509,7 +509,7 @@ export const mockPedidos: Pedido[] = [
     total: 78.85,
     subtotal: 70.85,
     taxaEntrega: 8.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: undefined,
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T16:00:00Z'),
@@ -526,7 +526,7 @@ export const mockPedidos: Pedido[] = [
     total: 152.90,
     subtotal: 137.90,
     taxaEntrega: 15.00,
-    statusPagamento: 2, // Paid
+    statusPagamento: 1, // Paid
     anotacoes: undefined,
     motivoCancelamento: undefined,
     estimativaEntrega: new Date('2024-01-25T13:00:00Z'),

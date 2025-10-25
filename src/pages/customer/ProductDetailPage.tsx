@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Button, Badge, Card } from '../../components/ui';
 import { useCart } from '../../context/CartContext';
 import { useProductDetails } from '../../hooks/customer/useProduct';
+import { formatCurrencyBR } from '../../utils/format';
 // import type { Produto } from '../../types';
 
 // Rating Stars Component
@@ -196,9 +197,19 @@ export const ProductDetailPage: React.FC = () => {
   const currentStock = product.estoque;
   const isAvailable = product.status === 1 && currentStock > 0;
 
-  // Create mock image URL if no image is available
+  // Standard fallback image URL
   const mockImageUrl = 'https://images.unsplash.com/photo-1546470427-e26264be0b37?w=600';
-  const productImages = [mockImageUrl]; // Since schema has only one image field
+  
+  // Get product image or use fallback
+  const getProductImage = () => {
+    if (product.imagem && product.imagem.length > 0) {
+      // Convert binary image to base64
+      return `data:image/jpeg;base64,${btoa(String.fromCharCode(...(product.imagem as any)))}`;
+    }
+    return mockImageUrl;
+  };
+  
+  const productImages = [getProductImage()];
 
   const handleAddToCart = () => {
     // Convert Produto to Product format for cart compatibility
@@ -312,7 +323,7 @@ export const ProductDetailPage: React.FC = () => {
             {/* Price */}
             <div className="border-t border-gray-200 pt-6">
               <div className="text-3xl font-bold text-green-700 mb-2">
-                R$ {currentPrice.toFixed(2)}
+                {formatCurrencyBR(currentPrice)}
                 <span className="text-lg text-gray-600 font-normal">/{product.medida}</span>
               </div>
             </div>
@@ -508,7 +519,7 @@ export const ProductDetailPage: React.FC = () => {
                         {relatedProduct.descricaoResumida || relatedProduct.descricao}
                       </p>
                       <div className="text-lg font-bold text-green-700">
-                        R$ {relatedProduct.preco.toFixed(2)}
+                        {formatCurrencyBR(relatedProduct.preco)}
                         <span className="text-sm text-green-500 font-normal">
                           /{relatedProduct.medida}
                         </span>
