@@ -33,12 +33,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Check role requirements if specified
   if (requireRole) {
     const requiredRoles = Array.isArray(requireRole) ? requireRole : [requireRole];
+    
+    // Helper function to normalize cargo values for comparison
+    const normalizeCargo = (cargo: string): string => {
+      // Map Portuguese to English for consistent comparison
+      const cargoMap: Record<string, string> = {
+        'cliente': 'customer',
+        'customer': 'customer',
+        'entregador': 'delivery',
+        'delivery': 'delivery',
+        'administrador': 'admin',
+        'admin': 'admin'
+      };
+      return cargoMap[cargo] || cargo;
+    };
+    
+    const userCargoNormalized = normalizeCargo(user.cargo);
+    
     const hasRequiredRole = requiredRoles.some(role => {
-      // Handle different role formats
-      if (role === 'admin') {
-        return user.cargo === 'admin' || user.cargo === 'administrador';
-      }
-      return user.cargo === role;
+      const roleNormalized = normalizeCargo(role);
+      return userCargoNormalized === roleNormalized;
     });
 
     if (!hasRequiredRole) {

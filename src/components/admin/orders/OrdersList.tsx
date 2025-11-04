@@ -5,6 +5,7 @@ import { Drawer } from '../shared/Drawer';
 import { DeleteConfirmationModal } from '../shared/modals';
 import { Button, Card, Badge, Select, Modal } from '../../ui';
 import type { Pedido } from '../../../types';
+import { formatCurrencyBR } from '../../../utils/format';
 
 export const OrdersList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -39,12 +40,12 @@ export const OrdersList: React.FC = () => {
 
   const handleStatusFilter = (status: string) => {
     setStatusFilter(status);
-    setFilters({ ...currentFilters, status: status || undefined });
+    setFilters({ ...currentFilters, status: status ? parseInt(status) : undefined });
   };
 
   const handlePaymentStatusFilter = (paymentStatus: string) => {
     setPaymentStatusFilter(paymentStatus);
-    setFilters({ ...currentFilters, paymentStatus: paymentStatus || undefined });
+    setFilters({ ...currentFilters, paymentStatus: paymentStatus ? parseInt(paymentStatus) : undefined });
   };
 
   const openOrderDetails = (order: Pedido) => {
@@ -101,7 +102,7 @@ export const OrdersList: React.FC = () => {
           <body>
             <h1>Comprovante de Pedido</h1>
             <p>Pedido #${orderId}</p>
-            <p>Total: R$ ${order.total.toFixed(2)}</p>
+            <p>Total: ${formatCurrencyBR(order.total)}</p>
             <p>Status: ${getStatusText(order.status)}</p>
           </body>
         </html>
@@ -155,14 +156,21 @@ export const OrdersList: React.FC = () => {
   };
 
   const getPaymentStatusBadge = (status: Pedido['statusPagamento']) => {
+    // Backend payment status mapping:
+    // 0 = Pendente (Pending)
+    // 1 = Pago (Paid) - this is what backend creates
+    // 2 = Pago (Paid) - legacy from mock data
+    // 3 = Falhou (Failed)
+    // 4 = Reembolsado (Refunded)
     switch (status) {
       case 1:
+      case 2:
         return <Badge variant="success">Pago</Badge>;
       case 0:
         return <Badge variant="warning">Pendente</Badge>;
-      case 2:
-        return <Badge variant="danger">Falhou</Badge>;
       case 3:
+        return <Badge variant="danger">Falhou</Badge>;
+      case 4:
         return <Badge variant="default">Reembolsado</Badge>;
       default:
         return <Badge variant="default">{status}</Badge>;
@@ -284,11 +292,11 @@ export const OrdersList: React.FC = () => {
         onChange={(e) => handleStatusFilter(e.target.value)}
         options={[
           { value: '', label: 'Todos os status' },
-          { value: 'received', label: 'Recebido' },
-          { value: 'processing', label: 'Processando' },
-          { value: 'shipped', label: 'Enviado' },
-          { value: 'delivered', label: 'Entregue' },
-          { value: 'cancelled', label: 'Cancelado' }
+          { value: '0', label: 'Recebido' },
+          { value: '1', label: 'Processando' },
+          { value: '2', label: 'Enviado' },
+          { value: '3', label: 'Entregue' },
+          { value: '4', label: 'Cancelado' }
         ]}
       />
       <Select
@@ -296,10 +304,10 @@ export const OrdersList: React.FC = () => {
         onChange={(e) => handlePaymentStatusFilter(e.target.value)}
         options={[
           { value: '', label: 'Todos pagamentos' },
-          { value: 'pending', label: 'Pendente' },
-          { value: 'paid', label: 'Pago' },
-          { value: 'failed', label: 'Falhou' },
-          { value: 'refunded', label: 'Reembolsado' }
+          { value: '0', label: 'Pendente' },
+          { value: '1', label: 'Pago' },
+          { value: '3', label: 'Falhou' },
+          { value: '4', label: 'Reembolsado' }
         ]}
       />
     </div>
@@ -454,17 +462,17 @@ export const OrdersList: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-gray-600">Subtotal</p>
-                        <p className="font-medium">R$ {selectedOrder.subtotal.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrencyBR(selectedOrder.subtotal)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Taxa de Entrega</p>
-                        <p className="font-medium">R$ {selectedOrder.taxaEntrega.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrencyBR(selectedOrder.taxaEntrega)}</p>
                       </div>
                     </div>
                     <div className="border-t mt-3 pt-3">
                       <div className="flex justify-between font-medium text-lg">
                         <span>Total:</span>
-                        <span>R$ {selectedOrder.total.toFixed(2)}</span>
+                        <span>{formatCurrencyBR(selectedOrder.total)}</span>
                       </div>
                     </div>
                   </div>

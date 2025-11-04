@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal } from '../../../ui';
+import { formatCurrencyBR } from '../../../../utils/format';
 
 interface DataViewModalProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export const DataViewModal: React.FC<DataViewModalProps> = ({
       if (key.toLowerCase().includes('preco') || key.toLowerCase().includes('price') || key.toLowerCase().includes('gasto')) {
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-green-50 text-green-700 font-medium">
-            R$ {value.toFixed(2).replace('.', ',')}
+            {formatCurrencyBR(value)}
           </span>
         );
       }
